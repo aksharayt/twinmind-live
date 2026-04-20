@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TwinMind — Live Suggestions</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-logo">twin<strong>mind</strong></span>
+      <span class="session-badge" id="sessionStatus">IDLE</span>
+    </div>
+    <div class="topbar-center" id="latencyPanel">
+      <span class="latency-item hidden" id="latencyTranscribe">Transcribe: —</span>
+      <span class="latency-item hidden" id="latencySuggestions">Suggestions: —</span>
+      <span class="latency-item hidden" id="latencyChat">Chat token: —</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-ghost" id="btnSummary" disabled>End Summary</button>
+      <button class="btn-ghost" id="btnSettings">Settings</button>
+      <button class="btn-ghost" id="btnExport">Export Session</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+
+    <!-- Column 1: Mic + Transcript -->
+    <section class="col" aria-label="Mic and Transcript">
+      <div class="col-header">
+        <span class="col-label">1. MIC &amp; TRANSCRIPT</span>
+        <span class="col-meta" id="recordingStatus">IDLE</span>
+      </div>
+      <div class="mic-zone">
+        <button class="mic-btn" id="btnMic" aria-label="Start recording">
+          <svg class="mic-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
+            <path d="M5 10a7 7 0 0 0 14 0" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="12" y1="17" x2="12" y2="21" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="9" y1="21" x2="15" y2="21" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <span class="mic-hint" id="micHint">Click mic to start recording</span>
+      </div>
+      <div class="transcript-scroll" id="transcriptScroll">
+        <p class="col-empty" id="transcriptEmpty">No transcript yet — start the mic.</p>
+        <div id="transcriptChunks"></div>
+      </div>
+    </section>
+
+    <!-- Column 2: Live Suggestions -->
+    <section class="col" aria-label="Live Suggestions">
+      <div class="col-header">
+        <span class="col-label">2. LIVE SUGGESTIONS</span>
+        <span class="col-meta" id="batchCount">0 BATCHES</span>
+      </div>
+      <div class="suggestions-toolbar">
+        <button class="btn-refresh" id="btnRefresh" disabled>
+          <span class="refresh-icon" id="refreshIcon">&#x21BA;</span>
+          Reload suggestions
+        </button>
+        <span class="refresh-timer" id="refreshTimer">auto-refresh in 30s</span>
+      </div>
+      <div class="suggestions-feed" id="suggestionsFeed">
+        <p class="col-empty">Suggestions appear here once recording starts.</p>
+      </div>
+    </section>
+
+    <!-- Column 3: Chat -->
+    <section class="col col-chat" aria-label="Chat">
+      <div class="col-header">
+        <span class="col-label">3. CHAT (DETAILED ANSWERS)</span>
+        <span class="col-meta">SESSION-ONLY</span>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <p class="col-empty" id="chatWelcome">Click a suggestion or type a question below.</p>
+      </div>
+      <div class="chat-input-zone">
+        <textarea
+          class="chat-input"
+          id="chatInput"
+          placeholder="Ask anything about the conversation..."
+          rows="1"
+          aria-label="Chat input"
+        ></textarea>
+        <button class="btn-send" id="btnSend" disabled>Send</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay hidden" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" id="btnCloseSettings" aria-label="Close settings">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <label class="setting-label">
+          Groq API Key
+          <input type="password" id="settingApiKey" placeholder="gsk_..." autocomplete="off" />
+        </label>
+        <label class="setting-label">
+          Model
+          <input type="text" id="settingModel" placeholder="meta-llama/llama-4-maverick-17b-128e-instruct" />
+        </label>
+        <div class="settings-row">
+          <label class="setting-label">
+            Suggestion Context (words)
+            <input type="number" id="settingCtxSuggestion" min="100" max="3000" />
+          </label>
+          <label class="setting-label">
+            Chat Context (words)
+            <input type="number" id="settingCtxChat" min="200" max="8000" />
+          </label>
+          <label class="setting-label">
+            Auto-refresh (seconds)
+            <input type="number" id="settingRefreshInterval" min="10" max="120" />
+          </label>
+        </div>
+        <label class="setting-label">
+          Live Suggestion Prompt
+          <textarea id="settingSuggestionPrompt" rows="7"></textarea>
+        </label>
+        <label class="setting-label">
+          Suggestion Click — Detail Prompt
+          <textarea id="settingDetailPrompt" rows="5"></textarea>
+        </label>
+        <label class="setting-label">
+          Chat Prompt
+          <textarea id="settingChatPrompt" rows="4"></textarea>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btnResetSettings">Reset to Defaults</button>
+        <button class="btn-primary" id="btnSaveSettings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
