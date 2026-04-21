@@ -1,151 +1,1568 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TwinMind — Live Suggestions</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TwinMind — Live Suggestions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   TWINMIND — CSS Variables & Reset
+============================================================ */
+:root {
+  --bg-base:        #0a0c10;
+  --bg-surface:     #0f1218;
+  --bg-card:        #151922;
+  --bg-card-hover:  #1c2130;
+  --bg-input:       #151922;
+  --border:         #1e2535;
+  --border-light:   #252e42;
+  --border-focus:   #3d6af0;
+
+  --text-primary:   #e2e8f8;
+  --text-secondary: #7b8db0;
+  --text-muted:     #3d4a62;
+  --text-dim:       #2a3448;
+
+  --accent-blue:    #3d6af0;
+  --accent-blue-glow: rgba(61,106,240,0.18);
+  --accent-teal:    #00b896;
+  --accent-amber:   #f0a020;
+  --accent-red:     #e05060;
+  --accent-violet:  #8b5cf6;
+
+  --q-color:   #3d6af0;
+  --tp-color:  #00b896;
+  --an-color:  #f0a020;
+  --fc-color:  #e05060;
+  --cl-color:  #8b5cf6;
+
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+
+  --r-sm:  5px;
+  --r-md:  9px;
+  --r-lg:  13px;
+  --ease:  160ms cubic-bezier(.4,0,.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   TOPBAR
+============================================================ */
+.topbar {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-base);
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.brand span { color: var(--accent-blue); }
+
+.status-chip {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2px 9px;
+  border-radius: 100px;
+  transition: all var(--ease);
+}
+
+.status-chip.live {
+  color: #ff4560;
+  border-color: rgba(255,69,96,0.5);
+  background: rgba(255,69,96,0.08);
+  animation: chip-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes chip-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.topbar-center {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.latency-tag {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2px 9px;
+  border-radius: 100px;
+  display: none;
+  transition: all var(--ease);
+}
+
+.latency-tag.visible { display: inline-flex; }
+.latency-tag.fast { color: var(--accent-teal); border-color: rgba(0,184,150,0.4); }
+.latency-tag.ok   { color: var(--accent-amber); border-color: rgba(240,160,32,0.4); }
+
+.topbar-right { display: flex; gap: 6px; }
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+.btn {
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: var(--r-sm);
+  transition: all var(--ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  outline: none;
+}
+
+.btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 5px 13px;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--bg-card);
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.btn-outline:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 18px;
+  border: none;
+}
+
+.btn-primary:hover { background: #4d78ff; }
+
+.btn-send {
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 20px;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all var(--ease);
+  flex-shrink: 0;
+}
+
+.btn-send:hover:not(:disabled) { background: #4d78ff; }
+.btn-send:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all var(--ease);
+}
+
+.btn-refresh:hover:not(:disabled) {
+  border-color: var(--accent-blue);
+  background: var(--accent-blue-glow);
+}
+
+.btn-refresh:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.refresh-arrow { font-size: 14px; line-height: 1; }
+.refresh-arrow.spinning { animation: spin 0.9s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   WORKSPACE — 3 columns
+============================================================ */
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  height: calc(100vh - 50px);
+  overflow: hidden;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.col:last-child { border-right: none; }
+
+.col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-surface);
+}
+
+.col-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.col-meta {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   COL 1 — MIC & TRANSCRIPT
+============================================================ */
+.mic-zone {
+  padding: 22px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.mic-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mic-btn:hover { transform: scale(1.07); box-shadow: 0 0 0 10px var(--accent-blue-glow); }
+
+.mic-btn.recording {
+  background: var(--accent-red);
+  animation: mic-pulse 1.8s ease-in-out infinite;
+}
+
+.mic-btn.recording:hover { box-shadow: 0 0 0 10px rgba(224,80,96,0.18); }
+
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224,80,96,0.5); }
+  50%       { box-shadow: 0 0 0 16px rgba(224,80,96,0); }
+}
+
+.mic-svg { width: 22px; height: 22px; }
+
+.mic-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.transcript-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+  min-height: 0;
+  scroll-behavior: smooth;
+}
+
+.col-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 28px;
+  line-height: 1.7;
+}
+
+.transcript-chunk {
+  margin-bottom: 14px;
+  padding: 11px 13px;
+  background: var(--bg-card);
+  border-radius: var(--r-md);
+  border-left: 2px solid var(--border-light);
+  animation: fade-in 0.25s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.chunk-time {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  margin-bottom: 5px;
+}
+
+.chunk-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.75;
+}
+
+/* ============================================================
+   COL 2 — LIVE SUGGESTIONS
+============================================================ */
+.suggestions-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.refresh-timer {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.suggestions-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.suggestion-batch {
+  margin-bottom: 22px;
+}
+
+.batch-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.batch-timestamp {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.batch-header-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.batch-new .batch-timestamp { color: var(--accent-blue); }
+.batch-new .batch-header-line { background: linear-gradient(90deg, var(--border-focus), transparent); }
+
+.batch-old .suggestion-card { opacity: 0.5; }
+.batch-old .suggestion-card:hover { opacity: 1; }
+
+.suggestion-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 13px 15px;
+  cursor: pointer;
+  margin-bottom: 7px;
+  position: relative;
+  overflow: hidden;
+  transition: background var(--ease), border-color var(--ease), transform 0.15s;
+}
+
+.suggestion-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--card-accent, var(--accent-blue));
+  border-radius: 3px 0 0 3px;
+}
+
+.suggestion-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--card-accent, var(--accent-blue));
+  transform: translateX(3px);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.card-badge {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--card-accent, var(--accent-blue));
+}
+
+.card-confidence {
+  font-size: 8px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 100px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.card-preview {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.card-quote {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  border-left: 2px solid var(--border-light);
+  padding-left: 8px;
+  margin-top: 7px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* Skeleton */
+.skeleton-batch { margin-bottom: 22px; }
+
+.skeleton-label {
+  height: 10px;
+  width: 80px;
+  background: var(--bg-card);
+  border-radius: 100px;
+  margin-bottom: 9px;
+  animation: shimmer 1.4s infinite;
+  background-size: 200% 100%;
+  background-image: linear-gradient(90deg, var(--bg-card) 0%, var(--bg-card-hover) 50%, var(--bg-card) 100%);
+}
+
+.skeleton-card {
+  height: 75px;
+  border-radius: var(--r-lg);
+  margin-bottom: 7px;
+  animation: shimmer 1.4s infinite;
+  background-size: 200% 100%;
+  background-image: linear-gradient(90deg, var(--bg-card) 0%, var(--bg-card-hover) 50%, var(--bg-card) 100%);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   COL 3 — CHAT
+============================================================ */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  scroll-behavior: smooth;
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: fade-in 0.2s ease;
+}
+
+.msg-role {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.chat-msg.user .msg-role { color: var(--accent-blue); }
+.chat-msg.assistant .msg-role { color: var(--accent-teal); }
+
+.msg-content {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+}
+
+.chat-msg.user .msg-content {
+  background: rgba(61,106,240,0.1);
+  border: 1px solid rgba(61,106,240,0.22);
+}
+
+.chat-input-zone {
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 9px 13px;
+  resize: none;
+  max-height: 110px;
+  line-height: 1.55;
+  transition: border-color var(--ease);
+  outline: none;
+}
+
+.chat-input:focus { border-color: var(--border-focus); }
+.chat-input::placeholder { color: var(--text-muted); }
+
+/* ============================================================
+   MODAL — SETTINGS
+============================================================ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(5px);
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-lg);
+  width: 600px;
+  max-width: calc(100vw - 32px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 3px;
+  line-height: 1;
+  transition: color var(--ease);
+}
+
+.modal-close:hover { color: var(--text-primary); }
+
+.modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.field-label input,
+.field-label textarea,
+.field-label select {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  padding: 8px 11px;
+  outline: none;
+  transition: border-color var(--ease);
+  width: 100%;
+}
+
+.field-label input:focus,
+.field-label textarea:focus { border-color: var(--border-focus); }
+
+.field-label textarea { resize: vertical; font-size: 11.5px; line-height: 1.65; }
+
+.modal-foot {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-foot-left { font-size: 11px; color: var(--text-muted); }
+
+.modal-foot-right { display: flex; gap: 8px; }
+
+/* ============================================================
+   SCROLLBARS
+============================================================ */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ============================================================
+   TOAST NOTIFICATION
+============================================================ */
+.toast-wrap {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-md);
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  animation: toast-in 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.toast.error { color: var(--accent-red); border-color: rgba(224,80,96,0.4); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
 </head>
 <body>
 
-  <header class="topbar">
-    <div class="topbar-brand">
-      <span class="brand-logo">twin<strong>mind</strong></span>
-      <span class="session-badge" id="sessionStatus">IDLE</span>
+<!-- ═══════════════════════════════════════════════════════════
+     TOPBAR
+════════════════════════════════════════════════════════════ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="brand">twin<span>mind</span></div>
+    <div class="status-chip" id="statusChip">IDLE</div>
+  </div>
+  <div class="topbar-center">
+    <span class="latency-tag" id="tagTranscribe">Transcribe: —</span>
+    <span class="latency-tag" id="tagSuggest">Suggest: —</span>
+    <span class="latency-tag" id="tagChat">Chat token: —</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-outline" id="btnSummary" disabled>End Summary</button>
+    <button class="btn btn-outline" id="btnSettings">Settings</button>
+    <button class="btn btn-outline" id="btnExport">Export Session</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     3-COLUMN WORKSPACE
+════════════════════════════════════════════════════════════ -->
+<main class="workspace">
+
+  <!-- ── COL 1: MIC + TRANSCRIPT ───────────────────────────── -->
+  <section class="col" aria-label="Mic and Transcript">
+    <div class="col-header">
+      <span class="col-label">1. Mic &amp; Transcript</span>
+      <span class="col-meta" id="recStatus">IDLE</span>
     </div>
-    <div class="topbar-center" id="latencyPanel">
-      <span class="latency-item hidden" id="latencyTranscribe">Transcribe: —</span>
-      <span class="latency-item hidden" id="latencySuggestions">Suggestions: —</span>
-      <span class="latency-item hidden" id="latencyChat">Chat token: —</span>
+
+    <div class="mic-zone">
+      <button class="mic-btn" id="btnMic" aria-label="Start recording">
+        <svg class="mic-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
+          <path d="M5 11a7 7 0 0 0 14 0" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+          <line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <span class="mic-hint" id="micHint">Click to start recording<br>Transcript appends every ~30s</span>
     </div>
-    <div class="topbar-actions">
-      <button class="btn-ghost" id="btnSummary" disabled>End Summary</button>
-      <button class="btn-ghost" id="btnSettings">Settings</button>
-      <button class="btn-ghost" id="btnExport">Export Session</button>
+
+    <div class="transcript-scroll" id="transcriptScroll">
+      <p class="col-empty" id="transcriptEmpty">No transcript yet — start the mic.</p>
+      <div id="transcriptChunks"></div>
     </div>
-  </header>
+  </section>
 
-  <main class="workspace">
+  <!-- ── COL 2: LIVE SUGGESTIONS ───────────────────────────── -->
+  <section class="col" aria-label="Live Suggestions">
+    <div class="col-header">
+      <span class="col-label">2. Live Suggestions</span>
+      <span class="col-meta" id="batchMeta">0 Batches</span>
+    </div>
 
-    <!-- Column 1: Mic + Transcript -->
-    <section class="col" aria-label="Mic and Transcript">
-      <div class="col-header">
-        <span class="col-label">1. MIC &amp; TRANSCRIPT</span>
-        <span class="col-meta" id="recordingStatus">IDLE</span>
-      </div>
-      <div class="mic-zone">
-        <button class="mic-btn" id="btnMic" aria-label="Start recording">
-          <svg class="mic-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
-            <path d="M5 10a7 7 0 0 0 14 0" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            <line x1="12" y1="17" x2="12" y2="21" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            <line x1="9" y1="21" x2="15" y2="21" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <span class="mic-hint" id="micHint">Click mic to start recording</span>
-      </div>
-      <div class="transcript-scroll" id="transcriptScroll">
-        <p class="col-empty" id="transcriptEmpty">No transcript yet — start the mic.</p>
-        <div id="transcriptChunks"></div>
-      </div>
-    </section>
+    <div class="suggestions-toolbar">
+      <button class="btn-refresh" id="btnRefresh" disabled>
+        <span class="refresh-arrow" id="refreshArrow">&#x21BA;</span>
+        Reload suggestions
+      </button>
+      <span class="refresh-timer" id="refreshTimer">auto-refresh in 30s</span>
+    </div>
 
-    <!-- Column 2: Live Suggestions -->
-    <section class="col" aria-label="Live Suggestions">
-      <div class="col-header">
-        <span class="col-label">2. LIVE SUGGESTIONS</span>
-        <span class="col-meta" id="batchCount">0 BATCHES</span>
-      </div>
-      <div class="suggestions-toolbar">
-        <button class="btn-refresh" id="btnRefresh" disabled>
-          <span class="refresh-icon" id="refreshIcon">&#x21BA;</span>
-          Reload suggestions
-        </button>
-        <span class="refresh-timer" id="refreshTimer">auto-refresh in 30s</span>
-      </div>
-      <div class="suggestions-feed" id="suggestionsFeed">
-        <p class="col-empty">Suggestions appear here once recording starts.</p>
-      </div>
-    </section>
+    <div class="suggestions-feed" id="suggestionsFeed">
+      <p class="col-empty">Suggestions appear here once recording starts.</p>
+    </div>
+  </section>
 
-    <!-- Column 3: Chat -->
-    <section class="col col-chat" aria-label="Chat">
-      <div class="col-header">
-        <span class="col-label">3. CHAT (DETAILED ANSWERS)</span>
-        <span class="col-meta">SESSION-ONLY</span>
-      </div>
-      <div class="chat-messages" id="chatMessages">
-        <p class="col-empty" id="chatWelcome">Click a suggestion or type a question below.</p>
-      </div>
-      <div class="chat-input-zone">
-        <textarea
-          class="chat-input"
-          id="chatInput"
-          placeholder="Ask anything about the conversation..."
-          rows="1"
-          aria-label="Chat input"
-        ></textarea>
-        <button class="btn-send" id="btnSend" disabled>Send</button>
-      </div>
-    </section>
+  <!-- ── COL 3: CHAT ────────────────────────────────────────── -->
+  <section class="col col-chat" aria-label="Chat">
+    <div class="col-header">
+      <span class="col-label">3. Chat (Detailed Answers)</span>
+      <span class="col-meta">SESSION-ONLY</span>
+    </div>
 
-  </main>
+    <div class="chat-messages" id="chatMessages">
+      <p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>
+    </div>
 
-  <!-- Settings Modal -->
-  <div class="modal-overlay hidden" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Settings</h2>
-        <button class="modal-close" id="btnCloseSettings" aria-label="Close settings">&#x2715;</button>
-      </div>
-      <div class="modal-body">
-        <label class="setting-label">
-          Groq API Key
-          <input type="password" id="settingApiKey" placeholder="gsk_..." autocomplete="off" />
+    <div class="chat-input-zone">
+      <textarea
+        class="chat-input"
+        id="chatInput"
+        placeholder="Ask anything about the conversation..."
+        rows="1"
+        aria-label="Chat input"
+      ></textarea>
+      <button class="btn-send" id="btnSend" disabled>Send</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SETTINGS MODAL
+════════════════════════════════════════════════════════════ -->
+<div class="overlay hidden" id="settingsOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title">Settings</span>
+      <button class="modal-close" id="btnCloseSettings" aria-label="Close">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">
+        Groq API Key
+        <input type="password" id="sApiKey" placeholder="gsk_..." autocomplete="off" />
+      </label>
+      <label class="field-label">
+        Model
+        <input type="text" id="sModel" placeholder="meta-llama/llama-4-maverick-17b-128e-instruct" />
+      </label>
+      <div class="field-row">
+        <label class="field-label">
+          Suggestion Context (words)
+          <input type="number" id="sCtxSuggest" min="100" max="4000" />
         </label>
-        <label class="setting-label">
-          Model
-          <input type="text" id="settingModel" placeholder="meta-llama/llama-4-maverick-17b-128e-instruct" />
+        <label class="field-label">
+          Chat Context (words)
+          <input type="number" id="sCtxChat" min="200" max="8000" />
         </label>
-        <div class="settings-row">
-          <label class="setting-label">
-            Suggestion Context (words)
-            <input type="number" id="settingCtxSuggestion" min="100" max="3000" />
-          </label>
-          <label class="setting-label">
-            Chat Context (words)
-            <input type="number" id="settingCtxChat" min="200" max="8000" />
-          </label>
-          <label class="setting-label">
-            Auto-refresh (seconds)
-            <input type="number" id="settingRefreshInterval" min="10" max="120" />
-          </label>
-        </div>
-        <label class="setting-label">
-          Live Suggestion Prompt
-          <textarea id="settingSuggestionPrompt" rows="7"></textarea>
-        </label>
-        <label class="setting-label">
-          Suggestion Click — Detail Prompt
-          <textarea id="settingDetailPrompt" rows="5"></textarea>
-        </label>
-        <label class="setting-label">
-          Chat Prompt
-          <textarea id="settingChatPrompt" rows="4"></textarea>
+        <label class="field-label">
+          Auto-refresh (seconds)
+          <input type="number" id="sRefreshSec" min="10" max="120" />
         </label>
       </div>
-      <div class="modal-footer">
-        <button class="btn-ghost" id="btnResetSettings">Reset to Defaults</button>
-        <button class="btn-primary" id="btnSaveSettings">Save Settings</button>
+      <label class="field-label">
+        Live Suggestion Prompt
+        <textarea id="sSuggestPrompt" rows="7"></textarea>
+      </label>
+      <label class="field-label">
+        Suggestion Click — Detail Prompt
+        <textarea id="sDetailPrompt" rows="5"></textarea>
+      </label>
+      <label class="field-label">
+        Chat Prompt
+        <textarea id="sChatPrompt" rows="4"></textarea>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <span class="modal-foot-left">Settings stored for this session only.</span>
+      <div class="modal-foot-right">
+        <button class="btn btn-outline" id="btnResetSettings">Reset Defaults</button>
+        <button class="btn btn-primary" id="btnSaveSettings">Save Settings</button>
       </div>
     </div>
   </div>
+</div>
 
-  <script type="module" src="app.js"></script>
+<!-- ── Toast container ─────────────────────────────────────── -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     APPLICATION LOGIC
+════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const SUGGESTION_PROMPT = `You are a real-time AI meeting copilot. Surface EXACTLY 3 suggestions that are immediately actionable for someone mid-conversation RIGHT NOW.
+
+SUGGESTION TYPES — pick the best mix for the current moment:
+- QUESTION: A smart follow-up question the user should ask next
+- TALKING_POINT: A specific fact, statistic, or angle worth raising now
+- ANSWER: A direct answer to a question just asked aloud
+- FACT_CHECK: Correction or verification of a specific claim just made
+- CLARIFY: Context or definition that would unblock the conversation
+
+RULES:
+1. Preview text must be standalone useful — NOT a teaser. It is the substance.
+2. Never repeat any title from previous batches listed below.
+3. The 3 suggestions must be different types where possible.
+4. Tie every suggestion to specific words just spoken. No generic advice.
+5. Include evidenceQuote: a short verbatim phrase from the transcript.
+6. Respond ONLY with valid JSON. No markdown, no explanation, nothing else.
+
+OUTPUT FORMAT:
+{
+  "suggestions": [
+    {
+      "type": "QUESTION|TALKING_POINT|ANSWER|FACT_CHECK|CLARIFY",
+      "title": "Max 8 words, punchy",
+      "preview": "1-2 sentences of immediate specific value. This alone helps.",
+      "evidenceQuote": "Short verbatim phrase from transcript",
+      "confidence": "high|med|low",
+      "detail_prompt": "The exact question for the chat panel to expand on fully"
+    }
+  ]
+}`;
+
+const DETAIL_PROMPT = `You are a meeting assistant expanding a suggestion clicked during a live conversation.
+
+Structure your answer:
+1. Direct Answer (2-3 sentences, specific, grounded in transcript)
+2. What to say next (a script the user can use immediately, in quotes)
+3. Key caveats or risks (1-2 sentences, only if genuinely important)
+
+Rules:
+- Reference actual words from the transcript provided
+- Maximum 300 words
+- Be actionable and specific, not generic`;
+
+const CHAT_PROMPT = `You are a knowledgeable meeting assistant with full access to the conversation transcript.
+
+When answering:
+- Lead with the direct answer, then explain
+- Reference exact phrases from the transcript when relevant
+- Use short paragraphs — this is a real-time meeting tool
+- If uncertain, say so clearly rather than speculating
+- Maximum 400 words unless depth is clearly needed
+- Format with short sections if the answer has multiple parts`;
+
+const DEFAULT_SETTINGS = {
+  apiKey:              '',
+  model:               'meta-llama/llama-4-maverick-17b-128e-instruct',
+  suggestionCtxWords:  800,
+  chatCtxWords:        2000,
+  refreshSeconds:      30,
+  suggestPrompt:       SUGGESTION_PROMPT,
+  detailPrompt:        DETAIL_PROMPT,
+  chatPrompt:          CHAT_PROMPT,
+};
+
+const TYPE_META = {
+  QUESTION:      { label: 'Question to Ask', color: '#3d6af0' },
+  TALKING_POINT: { label: 'Talking Point',   color: '#00b896' },
+  ANSWER:        { label: 'Answer',          color: '#f0a020' },
+  FACT_CHECK:    { label: 'Fact Check',      color: '#e05060' },
+  CLARIFY:       { label: 'Clarification',   color: '#8b5cf6' },
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const state = {
+  isRecording:         false,
+  mediaRecorder:       null,
+  audioChunks:         [],
+  transcriptChunks:    [],
+  suggestionBatches:   [],
+  chatHistory:         [],
+  settings:            loadSettings(),
+  refreshTimerId:      null,
+  countdownTimerId:    null,
+  chunkFlushTimerId:   null,
+  secondsLeft:         30,
+};
+
+// ─── DOM ──────────────────────────────────────────────────────────────────────
+const D = id => document.getElementById(id);
+
+const el = {
+  statusChip:     D('statusChip'),
+  tagTranscribe:  D('tagTranscribe'),
+  tagSuggest:     D('tagSuggest'),
+  tagChat:        D('tagChat'),
+  btnSummary:     D('btnSummary'),
+  btnSettings:    D('btnSettings'),
+  btnExport:      D('btnExport'),
+  btnMic:         D('btnMic'),
+  recStatus:      D('recStatus'),
+  micHint:        D('micHint'),
+  transcriptEmpty:D('transcriptEmpty'),
+  transcriptChunks:D('transcriptChunks'),
+  transcriptScroll:D('transcriptScroll'),
+  batchMeta:      D('batchMeta'),
+  btnRefresh:     D('btnRefresh'),
+  refreshArrow:   D('refreshArrow'),
+  refreshTimer:   D('refreshTimer'),
+  suggestionsFeed:D('suggestionsFeed'),
+  chatMessages:   D('chatMessages'),
+  chatEmpty:      D('chatEmpty'),
+  chatInput:      D('chatInput'),
+  btnSend:        D('btnSend'),
+  overlay:        D('settingsOverlay'),
+  btnCloseSettings:D('btnCloseSettings'),
+  btnSaveSettings: D('btnSaveSettings'),
+  btnResetSettings:D('btnResetSettings'),
+  sApiKey:        D('sApiKey'),
+  sModel:         D('sModel'),
+  sCtxSuggest:    D('sCtxSuggest'),
+  sCtxChat:       D('sCtxChat'),
+  sRefreshSec:    D('sRefreshSec'),
+  sSuggestPrompt: D('sSuggestPrompt'),
+  sDetailPrompt:  D('sDetailPrompt'),
+  sChatPrompt:    D('sChatPrompt'),
+  toastWrap:      D('toastWrap'),
+};
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function loadSettings() {
+  try {
+    const raw = sessionStorage.getItem('tm_settings');
+    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+  } catch { return { ...DEFAULT_SETTINGS }; }
+}
+
+function persistSettings() {
+  sessionStorage.setItem('tm_settings', JSON.stringify(state.settings));
+}
+
+function openSettings() {
+  el.sApiKey.value         = state.settings.apiKey;
+  el.sModel.value          = state.settings.model;
+  el.sCtxSuggest.value     = state.settings.suggestionCtxWords;
+  el.sCtxChat.value        = state.settings.chatCtxWords;
+  el.sRefreshSec.value     = state.settings.refreshSeconds;
+  el.sSuggestPrompt.value  = state.settings.suggestPrompt;
+  el.sDetailPrompt.value   = state.settings.detailPrompt;
+  el.sChatPrompt.value     = state.settings.chatPrompt;
+  el.overlay.classList.remove('hidden');
+  el.sApiKey.focus();
+}
+
+function closeSettings() {
+  el.overlay.classList.add('hidden');
+}
+
+function saveSettingsFromModal() {
+  state.settings.apiKey             = el.sApiKey.value.trim();
+  state.settings.model              = el.sModel.value.trim() || DEFAULT_SETTINGS.model;
+  state.settings.suggestionCtxWords = parseInt(el.sCtxSuggest.value, 10) || 800;
+  state.settings.chatCtxWords       = parseInt(el.sCtxChat.value, 10) || 2000;
+  state.settings.refreshSeconds     = parseInt(el.sRefreshSec.value, 10) || 30;
+  state.settings.suggestPrompt      = el.sSuggestPrompt.value.trim() || SUGGESTION_PROMPT;
+  state.settings.detailPrompt       = el.sDetailPrompt.value.trim() || DETAIL_PROMPT;
+  state.settings.chatPrompt         = el.sChatPrompt.value.trim() || CHAT_PROMPT;
+  persistSettings();
+  closeSettings();
+  toast('Settings saved.');
+}
+
+function resetSettings() {
+  if (!confirm('Reset all settings to defaults?')) return;
+  Object.assign(state.settings, DEFAULT_SETTINGS);
+  persistSettings();
+  openSettings();
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, isError = false) {
+  const div = document.createElement('div');
+  div.className = 'toast' + (isError ? ' error' : '');
+  div.textContent = msg;
+  el.toastWrap.appendChild(div);
+  setTimeout(() => div.remove(), 3500);
+}
+
+// ─── LATENCY DISPLAY ─────────────────────────────────────────────────────────
+function showLatency(type, ms) {
+  const round = Math.round(ms);
+  const fast  = ms < 3000;
+  let tag, label;
+  if (type === 'transcribe') { tag = el.tagTranscribe; label = `Transcribe: ${round}ms`; }
+  else if (type === 'suggest') { tag = el.tagSuggest; label = `Suggest: ${round}ms`; }
+  else { tag = el.tagChat; label = `Chat token: ${round}ms`; }
+  tag.textContent = label;
+  tag.classList.add('visible');
+  tag.className = 'latency-tag visible ' + (fast ? 'fast' : 'ok');
+}
+
+// ─── RECORDING ────────────────────────────────────────────────────────────────
+async function startRecording() {
+  if (!state.settings.apiKey) {
+    openSettings();
+    toast('Paste your Groq API key first.', true);
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus' : 'audio/webm';
+    state.mediaRecorder  = new MediaRecorder(stream, { mimeType });
+    state.audioChunks    = [];
+
+    state.mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) state.audioChunks.push(e.data);
+    };
+
+    state.mediaRecorder.onstop = async () => {
+      if (!state.audioChunks.length) return;
+      const blob = new Blob(state.audioChunks, { type: mimeType });
+      state.audioChunks = [];
+      await doTranscribe(blob);
+    };
+
+    const chunkMs = state.settings.refreshSeconds * 1000;
+    state.mediaRecorder.start(chunkMs);
+
+    state.chunkFlushTimerId = setInterval(() => {
+      if (state.mediaRecorder?.state === 'recording') state.mediaRecorder.requestData();
+    }, chunkMs);
+
+    state.isRecording = true;
+    setRecordingUI(true);
+    startRefreshCycle();
+    el.btnSummary.disabled = false;
+  } catch (err) {
+    const msg = err.name === 'NotAllowedError'
+      ? 'Microphone permission denied. Allow mic access and try again.'
+      : `Mic error: ${err.message}`;
+    toast(msg, true);
+  }
+}
+
+function stopRecording() {
+  if (state.mediaRecorder?.state === 'recording') {
+    state.mediaRecorder.requestData();
+    state.mediaRecorder.stop();
+    state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+  clearInterval(state.chunkFlushTimerId);
+  clearInterval(state.refreshTimerId);
+  clearInterval(state.countdownTimerId);
+  state.isRecording = false;
+  setRecordingUI(false);
+}
+
+function setRecordingUI(on) {
+  el.btnMic.classList.toggle('recording', on);
+  el.micHint.textContent  = on ? 'Click to stop recording' : 'Click to start recording\nTranscript appends every ~30s';
+  el.recStatus.textContent = on ? 'RECORDING' : 'IDLE';
+  el.statusChip.textContent = on ? 'RECORDING' : 'IDLE';
+  el.statusChip.classList.toggle('live', on);
+  el.btnRefresh.disabled    = !on;
+}
+
+// ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
+async function doTranscribe(blob) {
+  const form = new FormData();
+  form.append('audio', blob, 'audio.webm');
+  const t0 = Date.now();
+  try {
+    const res  = await fetch('/api/transcribe', {
+      method: 'POST',
+      headers: { 'x-groq-api-key': state.settings.apiKey },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(`Transcription error: ${data.error}`, true); return; }
+    showLatency('transcribe', Date.now() - t0);
+    if (data.text?.trim()) appendChunk(data.text.trim());
+  } catch (e) {
+    toast(`Network error: ${e.message}`, true);
+  }
+}
+
+function appendChunk(text) {
+  const chunk = { text, timestamp: new Date() };
+  state.transcriptChunks.push(chunk);
+  el.transcriptEmpty?.remove();
+
+  const div = document.createElement('div');
+  div.className = 'transcript-chunk';
+  div.innerHTML = `
+    <div class="chunk-time">${fmt(chunk.timestamp)}</div>
+    <div class="chunk-text">${esc(text)}</div>
+  `;
+  el.transcriptChunks.appendChild(div);
+  el.transcriptScroll.scrollTop = el.transcriptScroll.scrollHeight;
+}
+
+// ─── SUGGESTIONS ─────────────────────────────────────────────────────────────
+function startRefreshCycle() {
+  state.secondsLeft = state.settings.refreshSeconds;
+
+  state.countdownTimerId = setInterval(() => {
+    state.secondsLeft = Math.max(0, state.secondsLeft - 1);
+    el.refreshTimer.textContent = `auto-refresh in ${state.secondsLeft}s`;
+  }, 1000);
+
+  state.refreshTimerId = setInterval(async () => {
+    await fetchSuggestions();
+    state.secondsLeft = state.settings.refreshSeconds;
+  }, state.settings.refreshSeconds * 1000);
+}
+
+async function fetchSuggestions() {
+  const text = state.transcriptChunks.map(c => c.text).join(' ');
+  if (!text.trim()) return;
+
+  setLoading(true);
+  renderSkeletons();
+
+  const words   = text.split(' ');
+  const context = words.slice(-state.settings.suggestionCtxWords).join(' ');
+  const avoidList = state.suggestionBatches
+    .flatMap(b => b.suggestions)
+    .slice(-6)
+    .map(s => `- ${s.title}`)
+    .join('\n');
+
+  const userMsg = [
+    `LIVE TRANSCRIPT (last ~${state.settings.suggestionCtxWords} words):`,
+    context,
+    avoidList ? `\nPREVIOUS SUGGESTIONS (do NOT repeat):\n${avoidList}` : '',
+    '\nGenerate exactly 3 suggestions now.',
+  ].filter(Boolean).join('\n');
+
+  const t0 = Date.now();
+  try {
+    const res  = await fetch('/api/suggestions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-groq-api-key': state.settings.apiKey,
+      },
+      body: JSON.stringify({
+        systemPrompt: state.settings.suggestPrompt,
+        userMessage:  userMsg,
+        model:        state.settings.model,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(`Suggestions error: ${data.error}`, true); removeSkeletons(); return; }
+
+    showLatency('suggest', Date.now() - t0);
+    const batch = { suggestions: data.suggestions, timestamp: new Date() };
+    state.suggestionBatches.unshift(batch);
+    renderAllBatches();
+    el.batchMeta.textContent = `${state.suggestionBatches.length} Batch${state.suggestionBatches.length !== 1 ? 'es' : ''}`;
+  } catch (e) {
+    toast(`Network error: ${e.message}`, true);
+    removeSkeletons();
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderAllBatches() {
+  el.suggestionsFeed.innerHTML = '';
+  state.suggestionBatches.forEach((batch, i) => {
+    const batchEl = document.createElement('div');
+    batchEl.className = 'suggestion-batch ' + (i === 0 ? 'batch-new' : 'batch-old');
+
+    const header = document.createElement('div');
+    header.className = 'batch-header';
+    header.innerHTML = `
+      <span class="batch-timestamp">${i === 0 ? 'Latest — ' : ''}${fmt(batch.timestamp)}</span>
+      <span class="batch-header-line"></span>
+    `;
+    batchEl.appendChild(header);
+
+    batch.suggestions.forEach(s => batchEl.appendChild(buildCard(s)));
+    el.suggestionsFeed.appendChild(batchEl);
+  });
+}
+
+function buildCard(s) {
+  const meta = TYPE_META[s.type] ?? TYPE_META.QUESTION;
+  const card = document.createElement('div');
+  card.className = 'suggestion-card';
+  card.style.setProperty('--card-accent', meta.color);
+  card.setAttribute('role', 'button');
+  card.setAttribute('tabindex', '0');
+
+  const confLabel = s.confidence ? `<span class="card-confidence">${s.confidence}</span>` : '';
+  const quoteHtml = s.evidenceQuote
+    ? `<div class="card-quote">${esc(s.evidenceQuote)}</div>` : '';
+
+  card.innerHTML = `
+    <div class="card-top">
+      <span class="card-badge">${meta.label}</span>
+      ${confLabel}
+    </div>
+    <div class="card-title">${esc(s.title)}</div>
+    <div class="card-preview">${esc(s.preview)}</div>
+    ${quoteHtml}
+  `;
+
+  const onClick = () => expandSuggestion(s);
+  card.addEventListener('click', onClick);
+  card.addEventListener('keydown', e => { if (e.key === 'Enter') onClick(); });
+  return card;
+}
+
+function renderSkeletons() {
+  const wrap = document.createElement('div');
+  wrap.className = 'skeleton-batch';
+  wrap.innerHTML = `
+    <div class="skeleton-label"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card" style="animation-delay:.1s"></div>
+    <div class="skeleton-card" style="animation-delay:.2s"></div>
+  `;
+  el.suggestionsFeed.insertBefore(wrap, el.suggestionsFeed.firstChild);
+}
+
+function removeSkeletons() {
+  el.suggestionsFeed.querySelector('.skeleton-batch')?.remove();
+}
+
+function setLoading(on) {
+  if (on) el.refreshArrow.classList.add('spinning');
+  else    el.refreshArrow.classList.remove('spinning');
+}
+
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+async function expandSuggestion(s) {
+  await sendChat(s.detail_prompt || s.preview, true);
+}
+
+async function sendChat(message, isExpansion = false) {
+  if (!message.trim()) return;
+  const transcript = state.transcriptChunks.map(c => c.text).join(' ');
+  const ctxWords   = transcript.split(' ').slice(-state.settings.chatCtxWords).join(' ');
+
+  el.chatEmpty?.remove();
+  addBubble('user', message);
+  state.chatHistory.push({ role: 'user', content: message, timestamp: new Date() });
+  el.chatInput.value = '';
+  el.chatInput.style.height = 'auto';
+  el.btnSend.disabled = true;
+
+  const assistantBubble = addBubble('assistant', '');
+  const contentEl = assistantBubble.querySelector('.msg-content');
+  let fullText = '';
+  let firstTokenTime = null;
+  const t0 = Date.now();
+
+  try {
+    const res = await fetch('/api/chat/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-groq-api-key': state.settings.apiKey,
+      },
+      body: JSON.stringify({
+        message,
+        transcriptContext: ctxWords,
+        chatHistory: state.chatHistory.slice(-10),
+        isExpansion,
+        systemPrompt: isExpansion ? state.settings.detailPrompt : state.settings.chatPrompt,
+        model: state.settings.model,
+      }),
+    });
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = decoder.decode(value, { stream: true }).split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (payload === '[DONE]') break;
+        try {
+          const { delta, error } = JSON.parse(payload);
+          if (error) throw new Error(error);
+          if (delta) {
+            if (!firstTokenTime) {
+              firstTokenTime = Date.now();
+              showLatency('chat', firstTokenTime - t0);
+            }
+            fullText += delta;
+            contentEl.textContent = fullText;
+            el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+          }
+        } catch (_) { /* partial */ }
+      }
+    }
+    state.chatHistory.push({ role: 'assistant', content: fullText, timestamp: new Date() });
+  } catch (e) {
+    contentEl.textContent = `Error: ${e.message}`;
+    toast(`Chat error: ${e.message}`, true);
+  } finally {
+    el.btnSend.disabled = false;
+  }
+}
+
+function addBubble(role, text) {
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.innerHTML = `
+    <span class="msg-role">${role === 'user' ? 'You' : 'TwinMind'}</span>
+    <div class="msg-content">${esc(text)}</div>
+  `;
+  el.chatMessages.appendChild(div);
+  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+  return div;
+}
+
+// ─── END-OF-MEETING SUMMARY ───────────────────────────────────────────────────
+async function generateSummary() {
+  const transcript = state.transcriptChunks.map(c => c.text).join(' ');
+  if (!transcript.trim()) { toast('No transcript to summarize.', true); return; }
+  const prompt = `Generate a concise end-of-meeting summary from this transcript.
+
+Include:
+1. Key decisions made
+2. Action items (with owner if identifiable)
+3. Open questions or unresolved topics
+4. Key facts discussed
+
+Be specific, reference actual content, and keep it under 300 words.`;
+  await sendChat(prompt, false);
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportSession() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    settings: {
+      model: state.settings.model,
+      suggestionCtxWords: state.settings.suggestionCtxWords,
+      chatCtxWords: state.settings.chatCtxWords,
+      refreshSeconds: state.settings.refreshSeconds,
+    },
+    transcript: state.transcriptChunks.map(c => ({
+      timestamp: c.timestamp.toISOString(),
+      text: c.text,
+    })),
+    suggestionBatches: state.suggestionBatches.map(b => ({
+      timestamp: b.timestamp.toISOString(),
+      suggestions: b.suggestions,
+    })),
+    chatHistory: state.chatHistory.map(m => ({
+      timestamp: m.timestamp.toISOString(),
+      role: m.role,
+      content: m.content,
+    })),
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `twinmind-session-${new Date().toISOString().slice(0,19).replace(/[T:]/g,'-')}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Session exported.');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fmt(date) {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── EVENT LISTENERS ─────────────────────────────────────────────────────────
+el.btnMic.addEventListener('click', () => {
+  state.isRecording ? stopRecording() : startRecording();
+});
+
+el.btnRefresh.addEventListener('click', async () => {
+  if (state.mediaRecorder?.state === 'recording') state.mediaRecorder.requestData();
+  await fetchSuggestions();
+  state.secondsLeft = state.settings.refreshSeconds;
+});
+
+el.chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!el.btnSend.disabled) sendChat(el.chatInput.value);
+  }
+});
+
+el.chatInput.addEventListener('input', () => {
+  el.chatInput.style.height = 'auto';
+  el.chatInput.style.height = Math.min(el.chatInput.scrollHeight, 110) + 'px';
+  el.btnSend.disabled = !el.chatInput.value.trim();
+});
+
+el.btnSend.addEventListener('click', () => sendChat(el.chatInput.value));
+el.btnSummary.addEventListener('click', generateSummary);
+el.btnExport.addEventListener('click', exportSession);
+
+el.btnSettings.addEventListener('click', openSettings);
+el.btnCloseSettings.addEventListener('click', closeSettings);
+el.btnSaveSettings.addEventListener('click', saveSettingsFromModal);
+el.btnResetSettings.addEventListener('click', resetSettings);
+el.overlay.addEventListener('click', e => { if (e.target === el.overlay) closeSettings(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSettings();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+if (!state.settings.apiKey) openSettings();
+</script>
+
 </body>
 </html>
