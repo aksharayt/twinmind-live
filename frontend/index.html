@@ -519,6 +519,23 @@
       margin-bottom: 20px
     }
 
+    .sug-msg {
+      font-size: 12.5px;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+      border-radius: var(--r8);
+      background: var(--bg);
+      color: var(--text-m);
+      padding: 10px 12px;
+      margin-bottom: 12px
+    }
+
+    .sug-msg.err {
+      border-color: var(--red-b);
+      background: var(--red-l);
+      color: #991b1b
+    }
+
     .batch-row {
       display: flex;
       align-items: center;
@@ -1074,7 +1091,7 @@
         <span class="col-meta" id="bBadge">0 Batches</span>
       </div>
       <div class="sug-toolbar">
-        <button class="btn-refresh" id="btnRef" disabled>
+        <button class="btn-refresh" id="btnRef">
           <span class="spnico" id="spIco">&#x21BA;</span> Reload suggestions
         </button>
         <span class="cd-txt" id="cdTxt">auto-refresh in 30s</span>
@@ -1286,6 +1303,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       tx: [], batches: [], chat: [],
       cfg: loadCfg(),
       tR: null, tC: null, tF: null, sl: 30,
+      sugLoading: false,
     };
 
     // ─── DOM ──────────────────────────────────────────────────────────────────────
@@ -1439,7 +1457,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       $.recBadge.textContent = on ? 'RECORDING' : 'IDLE';
       $.sTxt.textContent = on ? 'RECORDING' : 'IDLE';
       $.sPill.classList.toggle('live', on);
-      $.btnRef.disabled = !on;
+      $.btnRef.disabled = false;
     }
 
     // ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
@@ -1460,7 +1478,10 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         const data = await res.json();
         if (!res.ok) { toast(`Transcription error: ${data.error}`, true); return; }
         lat('tx', Date.now() - t0);
-        if (data.text?.trim()) addChunk(data.text.trim());
+        if (data.text?.trim()) {
+          addChunk(data.text.trim());
+          await fetchSug();
+        }
       } catch (e) { toast(`Network error: ${e.message}`, true); }
     }
 
@@ -1488,9 +1509,16 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     }
 
     async function fetchSug() {
+      if (S.sugLoading) return;
       const all = S.tx.map(c => c.text).join(' ');
-      if (!all.trim()) return;
+      if (!all.trim()) {
+        showSugMsg('No transcript yet. Start recording, then reload suggestions.', true);
+        toast('No transcript yet. Start recording first.', true);
+        return;
+      }
 
+      S.sugLoading = true;
+      clearSugMsg();
       setSpin(true);
       renderSkels();
 
@@ -1526,15 +1554,23 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
           }),
         });
         const data = await res.json();
-        if (!res.ok) { toast(`Suggestions error: ${data.error}`, true); rmSkels(); return; }
+        if (!res.ok) {
+          const msg = data?.error || 'Unable to generate suggestions right now.';
+          showSugMsg(`Suggestions failed: ${msg}. Try Reload in a few seconds.`, true);
+          toast(`Suggestions error: ${msg}`, true);
+          rmSkels();
+          return;
+        }
         lat('sg', Date.now() - t0);
         S.batches.unshift({ suggestions: data.suggestions, ts: new Date() });
         renderBatches();
         $.bBadge.textContent = `${S.batches.length} Batch${S.batches.length !== 1 ? 'es' : ''}`;
       } catch (e) {
+        showSugMsg(`Network issue while loading suggestions: ${e.message}. Check backend health and API key, then retry.`, true);
         toast(`Network error: ${e.message}`, true);
         rmSkels();
       } finally {
+        S.sugLoading = false;
         setSpin(false);
       }
     }
@@ -1584,6 +1620,14 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     function rmSkels() { $.sugFeed.querySelector('.sk-wrap')?.remove(); }
     function setSpin(on) { $.spIco.classList.toggle('go', on); }
+    function clearSugMsg() { $.sugFeed.querySelectorAll('.sug-msg').forEach(n => n.remove()); }
+    function showSugMsg(text, err = false) {
+      clearSugMsg();
+      const d = document.createElement('div');
+      d.className = 'sug-msg' + (err ? ' err' : '');
+      d.textContent = text;
+      $.sugFeed.insertBefore(d, $.sugFeed.firstChild);
+    }
 
     // ─── CHAT ──────────────────────────────────────────────────────────────────────
     async function expCard(s) {
@@ -1643,7 +1687,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
               if (delta) {
                 if (!firstTok) { firstTok = Date.now(); lat('ch', firstTok - t0); }
                 full += delta;
-                body.textContent = full;
+                body.innerHTML = fmtMsg(full);
                 $.chatThread.scrollTop = $.chatThread.scrollHeight;
               }
             } catch (_) { /* partial SSE chunk — ignore */ }
@@ -1661,7 +1705,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     function addBubble(role, text) {
       const d = document.createElement('div');
       d.className = `cm ${role}`;
-      d.innerHTML = `<span class="cm-role">${role === 'user' ? 'You' : 'TwinMind'}</span><div class="cm-body">${esc(text)}</div>`;
+      d.innerHTML = `<span class="cm-role">${role === 'user' ? 'You' : 'TwinMind'}</span><div class="cm-body">${fmtMsg(text)}</div>`;
       $.chatThread.appendChild(d);
       $.chatThread.scrollTop = $.chatThread.scrollHeight;
       return d;
@@ -1720,6 +1764,14 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       return String(s ?? '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function fmtMsg(text) {
+      let out = esc(text ?? '');
+      out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      out = out.replace(/^\s*[-*]\s+/gm, '&#8226; ');
+      out = out.replace(/\n/g, '<br>');
+      return out;
     }
 
     // ─── EVENT LISTENERS ──────────────────────────────────────────────────────────
