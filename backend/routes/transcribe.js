@@ -11,30 +11,35 @@ const upload = multer({
 
 router.post('/', upload.single('audio'), async (req, res) => {
   const apiKey = req.headers['x-groq-api-key'];
-  if (!apiKey) return res.status(401).json({ error: 'API key required in x-groq-api-key header' });
-  if (!req.file) return res.status(400).json({ error: 'Audio file required' });
+  if (!apiKey) return res.status(401).json({ error: 'Missing x-groq-api-key header' });
+  if (!req.file) return res.status(400).json({ error: 'No audio file uploaded' });
 
-  const startTime = Date.now();
+  // All parameters are overridable — client sends them, we fall back to defaults
+  const whisperModel = req.headers['x-whisper-model'] ?? DEFAULT_SETTINGS.whisperModel;
+  const whisperLanguage = req.headers['x-whisper-language'] ?? DEFAULT_SETTINGS.whisperLanguage;
+
+  const startMs = Date.now();
 
   try {
     const groq = getGroqClient(apiKey);
     const audioFile = new File([req.file.buffer], 'audio.webm', { type: req.file.mimetype });
 
-    const transcription = await groq.audio.transcriptions.create({
+    const result = await groq.audio.transcriptions.create({
       file: audioFile,
-      model: DEFAULT_SETTINGS.whisperModel,
+      model: whisperModel,
       response_format: 'verbose_json',
-      language: 'en',
+      language: whisperLanguage,
     });
 
-    res.json({
-      text: transcription.text?.trim() ?? '',
-      duration: transcription.duration ?? 0,
-      latencyMs: Date.now() - startTime,
+    return res.json({
+      text: (result.text ?? '').trim(),
+      duration: result.duration ?? 0,
+      whisperModel,
+      latencyMs: Date.now() - startMs,
     });
   } catch (err) {
-    console.error('[transcribe] Error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('[transcribe]', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 

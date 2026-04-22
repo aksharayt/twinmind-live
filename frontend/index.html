@@ -1,1568 +1,1762 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TwinMind — Live Suggestions</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<style>
-/* ============================================================
-   TWINMIND — CSS Variables & Reset
-============================================================ */
-:root {
-  --bg-base:        #0a0c10;
-  --bg-surface:     #0f1218;
-  --bg-card:        #151922;
-  --bg-card-hover:  #1c2130;
-  --bg-input:       #151922;
-  --border:         #1e2535;
-  --border-light:   #252e42;
-  --border-focus:   #3d6af0;
-
-  --text-primary:   #e2e8f8;
-  --text-secondary: #7b8db0;
-  --text-muted:     #3d4a62;
-  --text-dim:       #2a3448;
-
-  --accent-blue:    #3d6af0;
-  --accent-blue-glow: rgba(61,106,240,0.18);
-  --accent-teal:    #00b896;
-  --accent-amber:   #f0a020;
-  --accent-red:     #e05060;
-  --accent-violet:  #8b5cf6;
-
-  --q-color:   #3d6af0;
-  --tp-color:  #00b896;
-  --an-color:  #f0a020;
-  --fc-color:  #e05060;
-  --cl-color:  #8b5cf6;
-
-  --font-body: 'DM Sans', system-ui, sans-serif;
-  --font-mono: 'DM Mono', monospace;
-
-  --r-sm:  5px;
-  --r-md:  9px;
-  --r-lg:  13px;
-  --ease:  160ms cubic-bezier(.4,0,.2,1);
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-  height: 100%;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.6;
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ============================================================
-   TOPBAR
-============================================================ */
-.topbar {
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-base);
-  position: relative;
-  z-index: 20;
-  flex-shrink: 0;
-}
-
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.brand span { color: var(--accent-blue); }
-
-.status-chip {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  padding: 2px 9px;
-  border-radius: 100px;
-  transition: all var(--ease);
-}
-
-.status-chip.live {
-  color: #ff4560;
-  border-color: rgba(255,69,96,0.5);
-  background: rgba(255,69,96,0.08);
-  animation: chip-pulse 2.2s ease-in-out infinite;
-}
-
-@keyframes chip-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.topbar-center {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.latency-tag {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  font-weight: 500;
-  color: var(--text-muted);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  padding: 2px 9px;
-  border-radius: 100px;
-  display: none;
-  transition: all var(--ease);
-}
-
-.latency-tag.visible { display: inline-flex; }
-.latency-tag.fast { color: var(--accent-teal); border-color: rgba(0,184,150,0.4); }
-.latency-tag.ok   { color: var(--accent-amber); border-color: rgba(240,160,32,0.4); }
-
-.topbar-right { display: flex; gap: 6px; }
-
-/* ============================================================
-   BUTTONS
-============================================================ */
-.btn {
-  border: none;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-weight: 500;
-  border-radius: var(--r-sm);
-  transition: all var(--ease);
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-  outline: none;
-}
-
-.btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
-
-.btn-outline {
-  background: transparent;
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  font-size: 12px;
-  padding: 5px 13px;
-}
-
-.btn-outline:hover:not(:disabled) {
-  background: var(--bg-card);
-  border-color: var(--accent-blue);
-  color: var(--text-primary);
-}
-
-.btn-outline:disabled { opacity: 0.35; cursor: not-allowed; }
-
-.btn-primary {
-  background: var(--accent-blue);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 7px 18px;
-  border: none;
-}
-
-.btn-primary:hover { background: #4d78ff; }
-
-.btn-send {
-  background: var(--accent-blue);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 9px 20px;
-  border: none;
-  border-radius: var(--r-sm);
-  cursor: pointer;
-  font-family: var(--font-body);
-  transition: all var(--ease);
-  flex-shrink: 0;
-}
-
-.btn-send:hover:not(:disabled) { background: #4d78ff; }
-.btn-send:disabled { opacity: 0.35; cursor: not-allowed; }
-
-.btn-refresh {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  color: var(--text-primary);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 14px;
-  border-radius: var(--r-sm);
-  cursor: pointer;
-  font-family: var(--font-body);
-  transition: all var(--ease);
-}
-
-.btn-refresh:hover:not(:disabled) {
-  border-color: var(--accent-blue);
-  background: var(--accent-blue-glow);
-}
-
-.btn-refresh:disabled { opacity: 0.35; cursor: not-allowed; }
-
-.refresh-arrow { font-size: 14px; line-height: 1; }
-.refresh-arrow.spinning { animation: spin 0.9s linear infinite; display: inline-block; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ============================================================
-   WORKSPACE — 3 columns
-============================================================ */
-.workspace {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  height: calc(100vh - 50px);
-  overflow: hidden;
-}
-
-.col {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border);
-  overflow: hidden;
-  min-height: 0;
-}
-
-.col:last-child { border-right: none; }
-
-.col-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 13px 18px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--bg-surface);
-}
-
-.col-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-}
-
-.col-meta {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-}
-
-/* ============================================================
-   COL 1 — MIC & TRANSCRIPT
-============================================================ */
-.mic-zone {
-  padding: 22px 18px 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.mic-btn {
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  background: var(--accent-blue);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.mic-btn:hover { transform: scale(1.07); box-shadow: 0 0 0 10px var(--accent-blue-glow); }
-
-.mic-btn.recording {
-  background: var(--accent-red);
-  animation: mic-pulse 1.8s ease-in-out infinite;
-}
-
-.mic-btn.recording:hover { box-shadow: 0 0 0 10px rgba(224,80,96,0.18); }
-
-@keyframes mic-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(224,80,96,0.5); }
-  50%       { box-shadow: 0 0 0 16px rgba(224,80,96,0); }
-}
-
-.mic-svg { width: 22px; height: 22px; }
-
-.mic-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-align: center;
-  line-height: 1.4;
-}
-
-.transcript-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px 18px;
-  min-height: 0;
-  scroll-behavior: smooth;
-}
-
-.col-empty {
-  color: var(--text-muted);
-  font-size: 12px;
-  text-align: center;
-  margin-top: 28px;
-  line-height: 1.7;
-}
-
-.transcript-chunk {
-  margin-bottom: 14px;
-  padding: 11px 13px;
-  background: var(--bg-card);
-  border-radius: var(--r-md);
-  border-left: 2px solid var(--border-light);
-  animation: fade-in 0.25s ease;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.chunk-time {
-  font-size: 9px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  margin-bottom: 5px;
-}
-
-.chunk-text {
-  font-size: 13px;
-  color: var(--text-primary);
-  line-height: 1.75;
-}
-
-/* ============================================================
-   COL 2 — LIVE SUGGESTIONS
-============================================================ */
-.suggestions-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 18px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.refresh-timer {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-}
-
-.suggestions-feed {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px 18px;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.suggestion-batch {
-  margin-bottom: 22px;
-}
-
-.batch-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 9px;
-}
-
-.batch-timestamp {
-  font-size: 9px;
-  font-family: var(--font-mono);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.batch-header-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.batch-new .batch-timestamp { color: var(--accent-blue); }
-.batch-new .batch-header-line { background: linear-gradient(90deg, var(--border-focus), transparent); }
-
-.batch-old .suggestion-card { opacity: 0.5; }
-.batch-old .suggestion-card:hover { opacity: 1; }
-
-.suggestion-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 13px 15px;
-  cursor: pointer;
-  margin-bottom: 7px;
-  position: relative;
-  overflow: hidden;
-  transition: background var(--ease), border-color var(--ease), transform 0.15s;
-}
-
-.suggestion-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 3px;
-  background: var(--card-accent, var(--accent-blue));
-  border-radius: 3px 0 0 3px;
-}
-
-.suggestion-card:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--card-accent, var(--accent-blue));
-  transform: translateX(3px);
-}
-
-.card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.card-badge {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 1.1px;
-  text-transform: uppercase;
-  color: var(--card-accent, var(--accent-blue));
-}
-
-.card-confidence {
-  font-size: 8px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  padding: 1px 6px;
-  border-radius: 100px;
-}
-
-.card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.4;
-  margin-bottom: 4px;
-}
-
-.card-preview {
-  font-size: 11.5px;
-  color: var(--text-secondary);
-  line-height: 1.65;
-}
-
-.card-quote {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-  border-left: 2px solid var(--border-light);
-  padding-left: 8px;
-  margin-top: 7px;
-  line-height: 1.5;
-  font-style: italic;
-}
-
-/* Skeleton */
-.skeleton-batch { margin-bottom: 22px; }
-
-.skeleton-label {
-  height: 10px;
-  width: 80px;
-  background: var(--bg-card);
-  border-radius: 100px;
-  margin-bottom: 9px;
-  animation: shimmer 1.4s infinite;
-  background-size: 200% 100%;
-  background-image: linear-gradient(90deg, var(--bg-card) 0%, var(--bg-card-hover) 50%, var(--bg-card) 100%);
-}
-
-.skeleton-card {
-  height: 75px;
-  border-radius: var(--r-lg);
-  margin-bottom: 7px;
-  animation: shimmer 1.4s infinite;
-  background-size: 200% 100%;
-  background-image: linear-gradient(90deg, var(--bg-card) 0%, var(--bg-card-hover) 50%, var(--bg-card) 100%);
-}
-
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* ============================================================
-   COL 3 — CHAT
-============================================================ */
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-height: 0;
-  scroll-behavior: smooth;
-}
-
-.chat-msg {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  animation: fade-in 0.2s ease;
-}
-
-.msg-role {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.chat-msg.user .msg-role { color: var(--accent-blue); }
-.chat-msg.assistant .msg-role { color: var(--accent-teal); }
-
-.msg-content {
-  font-size: 13px;
-  line-height: 1.75;
-  color: var(--text-primary);
-  background: var(--bg-card);
-  padding: 11px 13px;
-  border-radius: var(--r-md);
-}
-
-.chat-msg.user .msg-content {
-  background: rgba(61,106,240,0.1);
-  border: 1px solid rgba(61,106,240,0.22);
-}
-
-.chat-input-zone {
-  padding: 14px 18px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
-.chat-input {
-  flex: 1;
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  border-radius: var(--r-md);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 13px;
-  padding: 9px 13px;
-  resize: none;
-  max-height: 110px;
-  line-height: 1.55;
-  transition: border-color var(--ease);
-  outline: none;
-}
-
-.chat-input:focus { border-color: var(--border-focus); }
-.chat-input::placeholder { color: var(--text-muted); }
-
-/* ============================================================
-   MODAL — SETTINGS
-============================================================ */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  backdrop-filter: blur(5px);
-  opacity: 1;
-  transition: opacity 0.2s;
-}
-
-.overlay.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.modal {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--r-lg);
-  width: 600px;
-  max-width: calc(100vw - 32px);
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-}
-
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-}
-
-.modal-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 18px;
-  cursor: pointer;
-  padding: 3px;
-  line-height: 1;
-  transition: color var(--ease);
-}
-
-.modal-close:hover { color: var(--text-primary); }
-
-.modal-body {
-  padding: 20px 22px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.field-label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-}
-
-.field-label input,
-.field-label textarea,
-.field-label select {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  border-radius: var(--r-sm);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 12.5px;
-  padding: 8px 11px;
-  outline: none;
-  transition: border-color var(--ease);
-  width: 100%;
-}
-
-.field-label input:focus,
-.field-label textarea:focus { border-color: var(--border-focus); }
-
-.field-label textarea { resize: vertical; font-size: 11.5px; line-height: 1.65; }
-
-.modal-foot {
-  padding: 14px 22px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-foot-left { font-size: 11px; color: var(--text-muted); }
-
-.modal-foot-right { display: flex; gap: 8px; }
-
-/* ============================================================
-   SCROLLBARS
-============================================================ */
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-/* ============================================================
-   TOAST NOTIFICATION
-============================================================ */
-.toast-wrap {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-}
-
-.toast {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  border-radius: var(--r-md);
-  padding: 8px 16px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  animation: toast-in 0.2s ease;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-}
-
-.toast.error { color: var(--accent-red); border-color: rgba(224,80,96,0.4); }
-
-@keyframes toast-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>TwinMind — Live Suggestions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #1e3a5c;
+      --blue: #1a56db;
+      --blue-h: #1447c0;
+      --blue-l: #eff6ff;
+      --blue-b: #bfdbfe;
+      --teal: #0d7377;
+      --teal-l: #f0fdf4;
+      --amber: #b45309;
+      --amber-l: #fffbeb;
+      --amber-b: #fde68a;
+      --red: #dc2626;
+      --red-l: #fef2f2;
+      --red-b: #fecaca;
+      --violet: #6d28d9;
+      --violet-l: #f5f3ff;
+      --violet-b: #ddd6fe;
+      --green: #047857;
+      --green-l: #ecfdf5;
+      --green-b: #a7f3d0;
+      --bg: #f9fafb;
+      --white: #ffffff;
+      --border: #e5e7eb;
+      --border-md: #d1d5db;
+      --focus: #1a56db;
+      --text-h: #111827;
+      --text-b: #374151;
+      --text-m: #6b7280;
+      --text-f: #9ca3af;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --r6: 6px;
+      --r8: 8px;
+      --r12: 12px;
+      --xs: 0 1px 2px rgba(0, 0, 0, .05);
+      --sm: 0 1px 3px rgba(0, 0, 0, .1), 0 1px 2px rgba(0, 0, 0, .06);
+      --md: 0 4px 6px rgba(0, 0, 0, .07), 0 2px 4px rgba(0, 0, 0, .05);
+      --lg: 0 10px 25px rgba(0, 0, 0, .1), 0 4px 10px rgba(0, 0, 0, .06);
+      --t: 140ms ease;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-b);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      height: 56px;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 0 20px;
+      position: relative;
+      z-index: 40;
+      flex-shrink: 0;
+      box-shadow: var(--xs)
+    }
+
+    .tm-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      user-select: none
+    }
+
+    .tm-icon {
+      width: 34px;
+      height: 34px;
+      background: var(--navy);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .tm-words {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1
+    }
+
+    .tm-words .w1 {
+      font-size: 10px;
+      color: var(--text-m);
+      font-weight: 500;
+      letter-spacing: .5px
+    }
+
+    .tm-words .w2 {
+      font-size: 16px;
+      color: var(--navy);
+      font-weight: 700;
+      letter-spacing: -.4px
+    }
+
+    .tb-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%)
+    }
+
+    .spill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-m);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 100px;
+      transition: all var(--t)
+    }
+
+    .sdot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border-md);
+      flex-shrink: 0;
+      transition: background var(--t)
+    }
+
+    .spill.live {
+      color: var(--red);
+      border-color: var(--red-b);
+      background: var(--red-l)
+    }
+
+    .spill.live .sdot {
+      background: var(--red);
+      animation: pdot 1.5s ease-in-out infinite
+    }
+
+    @keyframes pdot {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+
+      50% {
+        transform: scale(1.6);
+        opacity: .5
+      }
+    }
+
+    .lpill {
+      display: none;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-f);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-variant-numeric: tabular-nums;
+      transition: all var(--t)
+    }
+
+    .lpill.show {
+      display: inline-flex
+    }
+
+    .lpill.fast {
+      color: var(--green);
+      background: var(--green-l);
+      border-color: var(--green-b)
+    }
+
+    .lpill.slow {
+      color: var(--amber);
+      background: var(--amber-l);
+      border-color: var(--amber-b)
+    }
+
+    .tb-right {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--r6);
+      cursor: pointer;
+      outline: none;
+      border: none;
+      transition: all var(--t);
+      white-space: nowrap;
+      line-height: 1;
+      padding: 7px 14px
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      pointer-events: none
+    }
+
+    .btn-out {
+      background: var(--white);
+      border: 1px solid var(--border-md);
+      color: var(--text-b)
+    }
+
+    .btn-out:hover {
+      background: var(--bg);
+      border-color: var(--blue);
+      color: var(--blue)
+    }
+
+    .btn-blue {
+      background: var(--blue);
+      color: #fff;
+      font-weight: 600
+    }
+
+    .btn-blue:hover {
+      background: var(--blue-h)
+    }
+
+    .btn-send {
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: var(--r6);
+      border: none;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all var(--t);
+      flex-shrink: 0
+    }
+
+    .btn-send:hover:not(:disabled) {
+      background: var(--blue-h)
+    }
+
+    .btn-send:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--white);
+      border: 1px solid var(--border-md);
+      color: var(--text-b);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: var(--r6);
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all var(--t)
+    }
+
+    .btn-refresh:hover:not(:disabled) {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: var(--blue-l)
+    }
+
+    .btn-refresh:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    .spnico {
+      display: inline-block;
+      font-size: 15px;
+      line-height: 1
+    }
+
+    .spnico.go {
+      animation: spin .8s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .mic-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      box-shadow: 0 4px 12px rgba(26, 86, 219, .3);
+      flex-shrink: 0
+    }
+
+    .mic-btn:hover {
+      transform: scale(1.07);
+      box-shadow: 0 6px 18px rgba(26, 86, 219, .4)
+    }
+
+    .mic-btn.rec {
+      background: var(--red);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, .3);
+      animation: mbeat 1.8s ease-in-out infinite
+    }
+
+    .mic-btn.rec:hover {
+      box-shadow: 0 0 0 12px rgba(220, 38, 38, .12)
+    }
+
+    @keyframes mbeat {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, .4), 0 4px 12px rgba(220, 38, 38, .3)
+      }
+
+      50% {
+        box-shadow: 0 0 0 12px rgba(220, 38, 38, 0), 0 4px 12px rgba(220, 38, 38, .3)
+      }
+    }
+
+    /* ── WORKSPACE ── */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      height: calc(100vh - 56px);
+      overflow: hidden
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      min-height: 0
+    }
+
+    .col:last-child {
+      border-right: none;
+      background: var(--bg)
+    }
+
+    .col-head {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--white)
+    }
+
+    .col-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--text-m)
+    }
+
+    .col-meta {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-f);
+      letter-spacing: .3px
+    }
+
+    /* ── COL 1: TRANSCRIPT ── */
+    .mic-area {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0
+    }
+
+    .mic-lbl {
+      font-size: 12px;
+      color: var(--text-m);
+      text-align: center;
+      line-height: 1.55
+    }
+
+    .tx-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      min-height: 0
+    }
+
+    .col-empty {
+      text-align: center;
+      color: var(--text-f);
+      font-size: 13px;
+      margin-top: 32px;
+      line-height: 1.8
+    }
+
+    .tx-chunk {
+      margin-bottom: 0;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fin .22s ease
+    }
+
+    .tx-chunk:last-child {
+      border-bottom: none
+    }
+
+    @keyframes fin {
+      from {
+        opacity: 0;
+        transform: translateY(4px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .tx-time {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 4px
+    }
+
+    .tx-text {
+      font-size: 13.5px;
+      color: var(--text-b);
+      line-height: 1.75
+    }
+
+    /* ── COL 2: SUGGESTIONS ── */
+    .sug-toolbar {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--white)
+    }
+
+    .cd-txt {
+      font-size: 11.5px;
+      color: var(--text-f);
+      font-variant-numeric: tabular-nums
+    }
+
+    .sug-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column
+    }
+
+    .batch-grp {
+      margin-bottom: 20px
+    }
+
+    .batch-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px
+    }
+
+    .batch-ts {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap
+    }
+
+    .batch-hr {
+      flex: 1;
+      height: 1px;
+      background: var(--border)
+    }
+
+    .b-new .batch-ts {
+      color: var(--blue)
+    }
+
+    .b-new .batch-hr {
+      background: linear-gradient(to right, var(--blue-b), transparent)
+    }
+
+    .b-old .batch-ts {
+      color: var(--text-f)
+    }
+
+    .b-old .sc {
+      opacity: .5
+    }
+
+    .b-old .sc:hover {
+      opacity: 1
+    }
+
+    .sc {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r8);
+      padding: 12px 14px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all var(--t);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--xs)
+    }
+
+    .sc::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--ca, var(--blue));
+      border-radius: 3px 0 0 3px
+    }
+
+    .sc:hover {
+      border-color: var(--ca, var(--blue));
+      box-shadow: var(--md);
+      transform: translateY(-1px)
+    }
+
+    .sc:active {
+      transform: translateY(0);
+      box-shadow: var(--xs)
+    }
+
+    .sc-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px
+    }
+
+    .sc-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 100px;
+      border: 1px solid
+    }
+
+    .sc-conf {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-f);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 1px 7px;
+      border-radius: 100px
+    }
+
+    .sc-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-h);
+      line-height: 1.4;
+      margin-bottom: 4px
+    }
+
+    .sc-prev {
+      font-size: 12.5px;
+      color: var(--text-b);
+      line-height: 1.65
+    }
+
+    .sc-quote {
+      margin-top: 8px;
+      padding: 5px 9px;
+      background: var(--bg);
+      border-left: 2px solid var(--border-md);
+      border-radius: 0 4px 4px 0;
+      font-size: 11px;
+      color: var(--text-m);
+      font-style: italic;
+      line-height: 1.5
+    }
+
+    .sk-wrap {
+      margin-bottom: 20px
+    }
+
+    .sk-h {
+      height: 10px;
+      width: 80px;
+      border-radius: 100px;
+      margin-bottom: 10px
+    }
+
+    .sk-c {
+      height: 84px;
+      border-radius: var(--r8);
+      margin-bottom: 8px
+    }
+
+    .sk-h,
+    .sk-c {
+      background-image: linear-gradient(90deg, var(--border) 0%, #f3f4f6 50%, var(--border) 100%);
+      background-size: 200% 100%;
+      animation: shim 1.3s infinite
+    }
+
+    .sk-c:nth-child(3) {
+      animation-delay: .08s
+    }
+
+    .sk-c:nth-child(4) {
+      animation-delay: .16s
+    }
+
+    @keyframes shim {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    /* ── COL 3: CHAT ── */
+    .chat-thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0
+    }
+
+    .cm {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: fin .2s ease
+    }
+
+    .cm-role {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase
+    }
+
+    .cm.user .cm-role {
+      color: var(--blue)
+    }
+
+    .cm.assistant .cm-role {
+      color: var(--teal)
+    }
+
+    .cm-body {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--text-b);
+      background: var(--white);
+      padding: 11px 14px;
+      border-radius: var(--r8);
+      border: 1px solid var(--border);
+      box-shadow: var(--xs)
+    }
+
+    .cm.user .cm-body {
+      background: var(--blue-l);
+      border-color: var(--blue-b);
+      color: #1e3a6b
+    }
+
+    .chat-foot {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-shrink: 0;
+      background: var(--white)
+    }
+
+    .chat-inp {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border-md);
+      border-radius: var(--r8);
+      color: var(--text-b);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 9px 14px;
+      resize: none;
+      max-height: 110px;
+      line-height: 1.55;
+      outline: none;
+      transition: border-color var(--t), background var(--t)
+    }
+
+    .chat-inp:focus {
+      border-color: var(--focus);
+      background: var(--white)
+    }
+
+    .chat-inp::placeholder {
+      color: var(--text-f)
+    }
+
+    /* ── MODAL ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, .45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(3px);
+      transition: opacity .18s
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none
+    }
+
+    .modal {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r12);
+      width: 680px;
+      max-width: calc(100vw - 32px);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--lg)
+    }
+
+    .modal-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-h)
+    }
+
+    .modal-x {
+      background: none;
+      border: none;
+      color: var(--text-f);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      transition: color var(--t);
+      border-radius: 4px
+    }
+
+    .modal-x:hover {
+      color: var(--text-h);
+      background: var(--bg)
+    }
+
+    .modal-body {
+      padding: 18px 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1
+    }
+
+    .api-note {
+      padding: 10px 13px;
+      background: var(--blue-l);
+      border: 1px solid var(--blue-b);
+      border-radius: var(--r6);
+      font-size: 12px;
+      color: #1e40af;
+      line-height: 1.6
+    }
+
+    .api-note a {
+      color: var(--blue);
+      font-weight: 600
+    }
+
+    .sect-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--text-m);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-top: 4px
+    }
+
+    .fld {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: var(--text-m)
+    }
+
+    .fld-desc {
+      font-size: 10.5px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-f);
+      margin-top: 1px
+    }
+
+    .fld-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px
+    }
+
+    .fld-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px
+    }
+
+    .fld-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px
+    }
+
+    .fld input,
+    .fld textarea {
+      background: var(--bg);
+      border: 1px solid var(--border-md);
+      border-radius: var(--r6);
+      color: var(--text-b);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      width: 100%;
+      transition: border-color var(--t), background var(--t)
+    }
+
+    .fld input:focus,
+    .fld textarea:focus {
+      border-color: var(--focus);
+      background: var(--white)
+    }
+
+    .fld textarea {
+      resize: vertical;
+      line-height: 1.6;
+      font-size: 12px
+    }
+
+    .modal-foot {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg)
+    }
+
+    .modal-note {
+      font-size: 11.5px;
+      color: var(--text-f)
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 8px
+    }
+
+    /* ── MISC ── */
+    ::-webkit-scrollbar {
+      width: 4px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-md);
+      border-radius: 4px
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-f)
+    }
+
+    .toast-dock {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      pointer-events: none
+    }
+
+    .toast {
+      background: var(--text-h);
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 9px 18px;
+      border-radius: var(--r8);
+      box-shadow: var(--lg);
+      animation: tin .18s ease
+    }
+
+    .toast.err {
+      background: var(--red)
+    }
+
+    @keyframes tin {
+      from {
+        opacity: 0;
+        transform: translateY(8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════
-     TOPBAR
-════════════════════════════════════════════════════════════ -->
-<header class="topbar">
-  <div class="topbar-left">
-    <div class="brand">twin<span>mind</span></div>
-    <div class="status-chip" id="statusChip">IDLE</div>
-  </div>
-  <div class="topbar-center">
-    <span class="latency-tag" id="tagTranscribe">Transcribe: —</span>
-    <span class="latency-tag" id="tagSuggest">Suggest: —</span>
-    <span class="latency-tag" id="tagChat">Chat token: —</span>
-  </div>
-  <div class="topbar-right">
-    <button class="btn btn-outline" id="btnSummary" disabled>End Summary</button>
-    <button class="btn btn-outline" id="btnSettings">Settings</button>
-    <button class="btn btn-outline" id="btnExport">Export Session</button>
-  </div>
-</header>
-
-<!-- ═══════════════════════════════════════════════════════════
-     3-COLUMN WORKSPACE
-════════════════════════════════════════════════════════════ -->
-<main class="workspace">
-
-  <!-- ── COL 1: MIC + TRANSCRIPT ───────────────────────────── -->
-  <section class="col" aria-label="Mic and Transcript">
-    <div class="col-header">
-      <span class="col-label">1. Mic &amp; Transcript</span>
-      <span class="col-meta" id="recStatus">IDLE</span>
-    </div>
-
-    <div class="mic-zone">
-      <button class="mic-btn" id="btnMic" aria-label="Start recording">
-        <svg class="mic-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
-          <path d="M5 11a7 7 0 0 0 14 0" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+  <header class="topbar">
+    <a class="tm-logo" href="#" onclick="return false">
+      <div class="tm-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <circle cx="9" cy="9" r="4" fill="white" opacity=".9" />
+          <circle cx="15" cy="9" r="4" fill="white" opacity=".6" />
+          <circle cx="9" cy="15" r="4" fill="white" opacity=".6" />
+          <circle cx="15" cy="15" r="4" fill="white" opacity=".35" />
         </svg>
-      </button>
-      <span class="mic-hint" id="micHint">Click to start recording<br>Transcript appends every ~30s</span>
-    </div>
-
-    <div class="transcript-scroll" id="transcriptScroll">
-      <p class="col-empty" id="transcriptEmpty">No transcript yet — start the mic.</p>
-      <div id="transcriptChunks"></div>
-    </div>
-  </section>
-
-  <!-- ── COL 2: LIVE SUGGESTIONS ───────────────────────────── -->
-  <section class="col" aria-label="Live Suggestions">
-    <div class="col-header">
-      <span class="col-label">2. Live Suggestions</span>
-      <span class="col-meta" id="batchMeta">0 Batches</span>
-    </div>
-
-    <div class="suggestions-toolbar">
-      <button class="btn-refresh" id="btnRefresh" disabled>
-        <span class="refresh-arrow" id="refreshArrow">&#x21BA;</span>
-        Reload suggestions
-      </button>
-      <span class="refresh-timer" id="refreshTimer">auto-refresh in 30s</span>
-    </div>
-
-    <div class="suggestions-feed" id="suggestionsFeed">
-      <p class="col-empty">Suggestions appear here once recording starts.</p>
-    </div>
-  </section>
-
-  <!-- ── COL 3: CHAT ────────────────────────────────────────── -->
-  <section class="col col-chat" aria-label="Chat">
-    <div class="col-header">
-      <span class="col-label">3. Chat (Detailed Answers)</span>
-      <span class="col-meta">SESSION-ONLY</span>
-    </div>
-
-    <div class="chat-messages" id="chatMessages">
-      <p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>
-    </div>
-
-    <div class="chat-input-zone">
-      <textarea
-        class="chat-input"
-        id="chatInput"
-        placeholder="Ask anything about the conversation..."
-        rows="1"
-        aria-label="Chat input"
-      ></textarea>
-      <button class="btn-send" id="btnSend" disabled>Send</button>
-    </div>
-  </section>
-
-</main>
-
-<!-- ═══════════════════════════════════════════════════════════
-     SETTINGS MODAL
-════════════════════════════════════════════════════════════ -->
-<div class="overlay hidden" id="settingsOverlay" role="dialog" aria-modal="true">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title">Settings</span>
-      <button class="modal-close" id="btnCloseSettings" aria-label="Close">&#x2715;</button>
-    </div>
-    <div class="modal-body">
-      <label class="field-label">
-        Groq API Key
-        <input type="password" id="sApiKey" placeholder="gsk_..." autocomplete="off" />
-      </label>
-      <label class="field-label">
-        Model
-        <input type="text" id="sModel" placeholder="meta-llama/llama-4-maverick-17b-128e-instruct" />
-      </label>
-      <div class="field-row">
-        <label class="field-label">
-          Suggestion Context (words)
-          <input type="number" id="sCtxSuggest" min="100" max="4000" />
-        </label>
-        <label class="field-label">
-          Chat Context (words)
-          <input type="number" id="sCtxChat" min="200" max="8000" />
-        </label>
-        <label class="field-label">
-          Auto-refresh (seconds)
-          <input type="number" id="sRefreshSec" min="10" max="120" />
-        </label>
       </div>
-      <label class="field-label">
-        Live Suggestion Prompt
-        <textarea id="sSuggestPrompt" rows="7"></textarea>
-      </label>
-      <label class="field-label">
-        Suggestion Click — Detail Prompt
-        <textarea id="sDetailPrompt" rows="5"></textarea>
-      </label>
-      <label class="field-label">
-        Chat Prompt
-        <textarea id="sChatPrompt" rows="4"></textarea>
-      </label>
+      <div class="tm-words"><span class="w1">twin</span><span class="w2">mind</span></div>
+    </a>
+
+    <div class="tb-center">
+      <div class="spill" id="sPill"><span class="sdot" id="sDot"></span><span id="sTxt">IDLE</span></div>
+      <span class="lpill" id="lTx">—</span>
+      <span class="lpill" id="lSg">—</span>
+      <span class="lpill" id="lCh">—</span>
     </div>
-    <div class="modal-foot">
-      <span class="modal-foot-left">Settings stored for this session only.</span>
-      <div class="modal-foot-right">
-        <button class="btn btn-outline" id="btnResetSettings">Reset Defaults</button>
-        <button class="btn btn-primary" id="btnSaveSettings">Save Settings</button>
+
+    <div class="tb-right">
+      <button class="btn btn-out" id="btnSum" disabled>End Summary</button>
+      <button class="btn btn-out" id="btnSet">Settings</button>
+      <button class="btn btn-out" id="btnExp">Export Session</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="col" aria-label="Mic and Transcript">
+      <div class="col-head">
+        <span class="col-lbl">1. Mic &amp; Transcript</span>
+        <span class="col-meta" id="recBadge">IDLE</span>
+      </div>
+      <div class="mic-area">
+        <button class="mic-btn" id="btnMic" aria-label="Start recording">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="2" width="6" height="11" rx="3" fill="white" />
+            <path d="M5 11a7 7 0 0 0 14 0" stroke="white" stroke-width="2" stroke-linecap="round" />
+            <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round" />
+            <line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <span class="mic-lbl" id="micLbl">Click mic to start recording<br><span
+            style="font-size:11px;color:var(--text-f)">Transcript appends every ~30s</span></span>
+      </div>
+      <div class="tx-scroll" id="txScroll">
+        <p class="col-empty" id="txEmpty">No transcript yet — start the mic.</p>
+        <div id="txChunks"></div>
+      </div>
+    </section>
+
+    <section class="col" aria-label="Live Suggestions">
+      <div class="col-head">
+        <span class="col-lbl">2. Live Suggestions</span>
+        <span class="col-meta" id="bBadge">0 Batches</span>
+      </div>
+      <div class="sug-toolbar">
+        <button class="btn-refresh" id="btnRef" disabled>
+          <span class="spnico" id="spIco">&#x21BA;</span> Reload suggestions
+        </button>
+        <span class="cd-txt" id="cdTxt">auto-refresh in 30s</span>
+      </div>
+      <div class="sug-feed" id="sugFeed">
+        <p class="col-empty">Suggestions appear here once recording starts.</p>
+      </div>
+    </section>
+
+    <section class="col" aria-label="Chat">
+      <div class="col-head">
+        <span class="col-lbl">3. Chat (Detailed Answers)</span>
+        <span class="col-meta">SESSION-ONLY</span>
+      </div>
+      <div class="chat-thread" id="chatThread">
+        <p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>
+      </div>
+      <div class="chat-foot">
+        <textarea class="chat-inp" id="chatInp" placeholder="Ask TwinMind anything about the conversation…"
+          rows="1"></textarea>
+        <button class="btn-send" id="btnSend" disabled>Send</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- SETTINGS MODAL — every field is editable, nothing hardcoded in the UI -->
+  <div class="overlay hidden" id="modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">Settings</span>
+        <button class="modal-x" id="btnClose">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="api-note">
+          <strong>Groq API key required.</strong> This is a demo app — bring your own key so there are no running costs.
+          Free key in 30 seconds at <a href="https://console.groq.com" target="_blank">console.groq.com</a>.
+        </div>
+
+        <div class="sect-title">API &amp; Models</div>
+        <label class="fld">Groq API Key<input type="password" id="fKey" placeholder="gsk_…"
+            autocomplete="off" /></label>
+        <div class="fld-2">
+          <label class="fld">
+            LLM Model (suggestions + chat)
+            <span class="fld-desc">Used for both suggestions and chat answers</span>
+            <input type="text" id="fMod" />
+          </label>
+          <label class="fld">
+            Whisper Model (transcription)
+            <span class="fld-desc">Groq audio transcription model</span>
+            <input type="text" id="fWhisper" />
+          </label>
+        </div>
+
+        <div class="sect-title">Context Windows</div>
+        <div class="fld-3">
+          <label class="fld">
+            Suggestion context (words)
+            <span class="fld-desc">Recent transcript words sent for suggestions</span>
+            <input type="number" id="fCS" min="100" max="4000" />
+          </label>
+          <label class="fld">
+            Chat context (words)
+            <span class="fld-desc">Transcript words sent for chat answers</span>
+            <input type="number" id="fCC" min="200" max="8000" />
+          </label>
+          <label class="fld">
+            Auto-refresh (seconds)
+            <span class="fld-desc">How often suggestions refresh automatically</span>
+            <input type="number" id="fRS" min="10" max="120" />
+          </label>
+        </div>
+
+        <div class="sect-title">LLM Parameters</div>
+        <div class="fld-4">
+          <label class="fld">
+            Suggestion temperature
+            <span class="fld-desc">0 = focused, 1 = creative</span>
+            <input type="number" id="fST" min="0" max="2" step="0.1" />
+          </label>
+          <label class="fld">
+            Suggestion max tokens
+            <span class="fld-desc">Max tokens per suggestion batch</span>
+            <input type="number" id="fSMT" min="200" max="2000" />
+          </label>
+          <label class="fld">
+            Chat temperature
+            <span class="fld-desc">0 = focused, 1 = creative</span>
+            <input type="number" id="fCT" min="0" max="2" step="0.1" />
+          </label>
+          <label class="fld">
+            Chat max tokens
+            <span class="fld-desc">Max tokens per chat response</span>
+            <input type="number" id="fCMT" min="200" max="4000" />
+          </label>
+        </div>
+
+        <div class="sect-title">Prompts</div>
+        <label class="fld">
+          Live Suggestion Prompt
+          <span class="fld-desc">System prompt sent with every suggestion refresh</span>
+          <textarea id="fSP" rows="8"></textarea>
+        </label>
+        <label class="fld">
+          Suggestion Click — Detail Prompt
+          <span class="fld-desc">System prompt used when a suggestion card is clicked</span>
+          <textarea id="fDP" rows="5"></textarea>
+        </label>
+        <label class="fld">
+          Chat Prompt
+          <span class="fld-desc">System prompt for free-form chat questions</span>
+          <textarea id="fCP" rows="4"></textarea>
+        </label>
+
+      </div>
+      <div class="modal-foot">
+        <span class="modal-note">Stored for this browser session only. Never sent anywhere except Groq.</span>
+        <div class="modal-btns">
+          <button class="btn btn-out" id="btnRst">Reset Defaults</button>
+          <button class="btn btn-blue" id="btnSav">Save Settings</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ── Toast container ─────────────────────────────────────── -->
-<div class="toast-wrap" id="toastWrap"></div>
+  <div class="toast-dock" id="toastDock"></div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     APPLICATION LOGIC
-════════════════════════════════════════════════════════════ -->
-<script>
-'use strict';
+  <script>
+    'use strict';
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
-const SUGGESTION_PROMPT = `You are a real-time AI meeting copilot. Surface EXACTLY 3 suggestions that are immediately actionable for someone mid-conversation RIGHT NOW.
+    // ─── DEFAULT PROMPTS ──────────────────────────────────────────────────────────
+    // These are the default values. Every single one is editable in Settings.
+    // The backend uses these only as fallbacks — the frontend sends all values explicitly.
 
-SUGGESTION TYPES — pick the best mix for the current moment:
-- QUESTION: A smart follow-up question the user should ask next
-- TALKING_POINT: A specific fact, statistic, or angle worth raising now
-- ANSWER: A direct answer to a question just asked aloud
+    const DEF_SP = `You are a real-time AI meeting copilot. Surface EXACTLY 3 suggestions that are immediately actionable for someone mid-conversation RIGHT NOW.
+
+SUGGESTION TYPES — pick the best mix for this exact moment:
+- QUESTION: A smart follow-up question the listener should ask next
+- TALKING_POINT: A specific fact, statistic, or angle worth raising right now
+- ANSWER: A direct answer to a question just asked aloud in the conversation
 - FACT_CHECK: Correction or verification of a specific claim just made
 - CLARIFY: Context or definition that would unblock the conversation
 
 RULES:
-1. Preview text must be standalone useful — NOT a teaser. It is the substance.
-2. Never repeat any title from previous batches listed below.
-3. The 3 suggestions must be different types where possible.
-4. Tie every suggestion to specific words just spoken. No generic advice.
-5. Include evidenceQuote: a short verbatim phrase from the transcript.
-6. Respond ONLY with valid JSON. No markdown, no explanation, nothing else.
+1. Preview text must be standalone useful — NOT a teaser. It IS the substance.
+2. Never repeat any title from previous batches listed in this request.
+3. All 3 suggestions must be different types where possible.
+4. Tie every suggestion to specific words actually spoken. No generic advice.
+5. Include evidenceQuote: a short verbatim phrase pulled from the transcript.
+6. Respond ONLY with valid JSON. No markdown fences, no explanation, nothing else.
 
 OUTPUT FORMAT:
 {
   "suggestions": [
     {
       "type": "QUESTION|TALKING_POINT|ANSWER|FACT_CHECK|CLARIFY",
-      "title": "Max 8 words, punchy",
-      "preview": "1-2 sentences of immediate specific value. This alone helps.",
-      "evidenceQuote": "Short verbatim phrase from transcript",
+      "title": "Max 8 words, punchy and specific",
+      "preview": "1-2 sentences of immediate specific value. This alone must help.",
+      "evidenceQuote": "Short verbatim phrase from transcript that triggered this",
       "confidence": "high|med|low",
-      "detail_prompt": "The exact question for the chat panel to expand on fully"
+      "detail_prompt": "The exact expanded question to send to the chat panel for full detail"
     }
   ]
 }`;
 
-const DETAIL_PROMPT = `You are a meeting assistant expanding a suggestion clicked during a live conversation.
+    const DEF_DP = `You are a meeting assistant expanding a suggestion clicked during a live conversation.
 
 Structure your answer:
-1. Direct Answer (2-3 sentences, specific, grounded in transcript)
-2. What to say next (a script the user can use immediately, in quotes)
-3. Key caveats or risks (1-2 sentences, only if genuinely important)
+1. Direct Answer — 2-3 sentences, specific, grounded in the transcript
+2. What to Say Next — a verbatim script the user can deliver immediately (in quotes)
+3. Caveats or Risks — 1-2 sentences only if genuinely important; omit if not
 
-Rules:
-- Reference actual words from the transcript provided
-- Maximum 300 words
-- Be actionable and specific, not generic`;
+Rules: reference actual words from transcript · max 300 words · be actionable not generic`;
 
-const CHAT_PROMPT = `You are a knowledgeable meeting assistant with full access to the conversation transcript.
+    const DEF_CP = `You are a knowledgeable meeting assistant with full access to the conversation transcript.
 
-When answering:
-- Lead with the direct answer, then explain
-- Reference exact phrases from the transcript when relevant
-- Use short paragraphs — this is a real-time meeting tool
-- If uncertain, say so clearly rather than speculating
-- Maximum 400 words unless depth is clearly needed
-- Format with short sections if the answer has multiple parts`;
+Lead with the direct answer then explain. Reference exact phrases from transcript. Use short paragraphs. State uncertainty clearly. Max 400 words unless depth is clearly needed.`;
 
-const DEFAULT_SETTINGS = {
-  apiKey:              '',
-  model:               'meta-llama/llama-4-maverick-17b-128e-instruct',
-  suggestionCtxWords:  800,
-  chatCtxWords:        2000,
-  refreshSeconds:      30,
-  suggestPrompt:       SUGGESTION_PROMPT,
-  detailPrompt:        DETAIL_PROMPT,
-  chatPrompt:          CHAT_PROMPT,
-};
-
-const TYPE_META = {
-  QUESTION:      { label: 'Question to Ask', color: '#3d6af0' },
-  TALKING_POINT: { label: 'Talking Point',   color: '#00b896' },
-  ANSWER:        { label: 'Answer',          color: '#f0a020' },
-  FACT_CHECK:    { label: 'Fact Check',      color: '#e05060' },
-  CLARIFY:       { label: 'Clarification',   color: '#8b5cf6' },
-};
-
-// ─── STATE ────────────────────────────────────────────────────────────────────
-const state = {
-  isRecording:         false,
-  mediaRecorder:       null,
-  audioChunks:         [],
-  transcriptChunks:    [],
-  suggestionBatches:   [],
-  chatHistory:         [],
-  settings:            loadSettings(),
-  refreshTimerId:      null,
-  countdownTimerId:    null,
-  chunkFlushTimerId:   null,
-  secondsLeft:         30,
-};
-
-// ─── DOM ──────────────────────────────────────────────────────────────────────
-const D = id => document.getElementById(id);
-
-const el = {
-  statusChip:     D('statusChip'),
-  tagTranscribe:  D('tagTranscribe'),
-  tagSuggest:     D('tagSuggest'),
-  tagChat:        D('tagChat'),
-  btnSummary:     D('btnSummary'),
-  btnSettings:    D('btnSettings'),
-  btnExport:      D('btnExport'),
-  btnMic:         D('btnMic'),
-  recStatus:      D('recStatus'),
-  micHint:        D('micHint'),
-  transcriptEmpty:D('transcriptEmpty'),
-  transcriptChunks:D('transcriptChunks'),
-  transcriptScroll:D('transcriptScroll'),
-  batchMeta:      D('batchMeta'),
-  btnRefresh:     D('btnRefresh'),
-  refreshArrow:   D('refreshArrow'),
-  refreshTimer:   D('refreshTimer'),
-  suggestionsFeed:D('suggestionsFeed'),
-  chatMessages:   D('chatMessages'),
-  chatEmpty:      D('chatEmpty'),
-  chatInput:      D('chatInput'),
-  btnSend:        D('btnSend'),
-  overlay:        D('settingsOverlay'),
-  btnCloseSettings:D('btnCloseSettings'),
-  btnSaveSettings: D('btnSaveSettings'),
-  btnResetSettings:D('btnResetSettings'),
-  sApiKey:        D('sApiKey'),
-  sModel:         D('sModel'),
-  sCtxSuggest:    D('sCtxSuggest'),
-  sCtxChat:       D('sCtxChat'),
-  sRefreshSec:    D('sRefreshSec'),
-  sSuggestPrompt: D('sSuggestPrompt'),
-  sDetailPrompt:  D('sDetailPrompt'),
-  sChatPrompt:    D('sChatPrompt'),
-  toastWrap:      D('toastWrap'),
-};
-
-// ─── SETTINGS ─────────────────────────────────────────────────────────────────
-function loadSettings() {
-  try {
-    const raw = sessionStorage.getItem('tm_settings');
-    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
-  } catch { return { ...DEFAULT_SETTINGS }; }
-}
-
-function persistSettings() {
-  sessionStorage.setItem('tm_settings', JSON.stringify(state.settings));
-}
-
-function openSettings() {
-  el.sApiKey.value         = state.settings.apiKey;
-  el.sModel.value          = state.settings.model;
-  el.sCtxSuggest.value     = state.settings.suggestionCtxWords;
-  el.sCtxChat.value        = state.settings.chatCtxWords;
-  el.sRefreshSec.value     = state.settings.refreshSeconds;
-  el.sSuggestPrompt.value  = state.settings.suggestPrompt;
-  el.sDetailPrompt.value   = state.settings.detailPrompt;
-  el.sChatPrompt.value     = state.settings.chatPrompt;
-  el.overlay.classList.remove('hidden');
-  el.sApiKey.focus();
-}
-
-function closeSettings() {
-  el.overlay.classList.add('hidden');
-}
-
-function saveSettingsFromModal() {
-  state.settings.apiKey             = el.sApiKey.value.trim();
-  state.settings.model              = el.sModel.value.trim() || DEFAULT_SETTINGS.model;
-  state.settings.suggestionCtxWords = parseInt(el.sCtxSuggest.value, 10) || 800;
-  state.settings.chatCtxWords       = parseInt(el.sCtxChat.value, 10) || 2000;
-  state.settings.refreshSeconds     = parseInt(el.sRefreshSec.value, 10) || 30;
-  state.settings.suggestPrompt      = el.sSuggestPrompt.value.trim() || SUGGESTION_PROMPT;
-  state.settings.detailPrompt       = el.sDetailPrompt.value.trim() || DETAIL_PROMPT;
-  state.settings.chatPrompt         = el.sChatPrompt.value.trim() || CHAT_PROMPT;
-  persistSettings();
-  closeSettings();
-  toast('Settings saved.');
-}
-
-function resetSettings() {
-  if (!confirm('Reset all settings to defaults?')) return;
-  Object.assign(state.settings, DEFAULT_SETTINGS);
-  persistSettings();
-  openSettings();
-}
-
-// ─── TOAST ────────────────────────────────────────────────────────────────────
-function toast(msg, isError = false) {
-  const div = document.createElement('div');
-  div.className = 'toast' + (isError ? ' error' : '');
-  div.textContent = msg;
-  el.toastWrap.appendChild(div);
-  setTimeout(() => div.remove(), 3500);
-}
-
-// ─── LATENCY DISPLAY ─────────────────────────────────────────────────────────
-function showLatency(type, ms) {
-  const round = Math.round(ms);
-  const fast  = ms < 3000;
-  let tag, label;
-  if (type === 'transcribe') { tag = el.tagTranscribe; label = `Transcribe: ${round}ms`; }
-  else if (type === 'suggest') { tag = el.tagSuggest; label = `Suggest: ${round}ms`; }
-  else { tag = el.tagChat; label = `Chat token: ${round}ms`; }
-  tag.textContent = label;
-  tag.classList.add('visible');
-  tag.className = 'latency-tag visible ' + (fast ? 'fast' : 'ok');
-}
-
-// ─── RECORDING ────────────────────────────────────────────────────────────────
-async function startRecording() {
-  if (!state.settings.apiKey) {
-    openSettings();
-    toast('Paste your Groq API key first.', true);
-    return;
-  }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus' : 'audio/webm';
-    state.mediaRecorder  = new MediaRecorder(stream, { mimeType });
-    state.audioChunks    = [];
-
-    state.mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0) state.audioChunks.push(e.data);
+    // ─── ALL DEFAULTS — every one of these is editable in Settings ───────────────
+    const DEFAULTS = {
+      apiKey: '',
+      model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
+      whisperModel: 'whisper-large-v3',
+      ctxSug: 800,
+      ctxChat: 2000,
+      refreshSec: 30,
+      sugTemp: 0.7,
+      sugMaxTok: 900,
+      chatTemp: 0.5,
+      chatMaxTok: 1000,
+      sugP: DEF_SP,
+      detP: DEF_DP,
+      chatP: DEF_CP,
     };
 
-    state.mediaRecorder.onstop = async () => {
-      if (!state.audioChunks.length) return;
-      const blob = new Blob(state.audioChunks, { type: mimeType });
-      state.audioChunks = [];
-      await doTranscribe(blob);
+    // ─── SUGGESTION TYPE DISPLAY MAP ─────────────────────────────────────────────
+    const TYPE = {
+      QUESTION: { l: 'Question to Ask', ac: 'var(--blue)', bg: 'var(--blue-l)', br: 'var(--blue-b)', tx: '#1d4ed8' },
+      TALKING_POINT: { l: 'Talking Point', ac: 'var(--teal)', bg: 'var(--teal-l)', br: 'var(--green-b)', tx: '#065f46' },
+      ANSWER: { l: 'Answer', ac: 'var(--amber)', bg: 'var(--amber-l)', br: 'var(--amber-b)', tx: 'var(--amber)' },
+      FACT_CHECK: { l: 'Fact Check', ac: 'var(--red)', bg: 'var(--red-l)', br: 'var(--red-b)', tx: 'var(--red)' },
+      CLARIFY: { l: 'Clarification', ac: 'var(--violet)', bg: 'var(--violet-l)', br: 'var(--violet-b)', tx: 'var(--violet)' },
     };
 
-    const chunkMs = state.settings.refreshSeconds * 1000;
-    state.mediaRecorder.start(chunkMs);
+    // ─── STATE ────────────────────────────────────────────────────────────────────
+    const S = {
+      rec: false, mr: null, chunks: [],
+      tx: [], batches: [], chat: [],
+      cfg: loadCfg(),
+      tR: null, tC: null, tF: null, sl: 30,
+    };
 
-    state.chunkFlushTimerId = setInterval(() => {
-      if (state.mediaRecorder?.state === 'recording') state.mediaRecorder.requestData();
-    }, chunkMs);
+    // ─── DOM ──────────────────────────────────────────────────────────────────────
+    const G = id => document.getElementById(id);
+    const $ = {
+      sPill: G('sPill'), sDot: G('sDot'), sTxt: G('sTxt'),
+      lTx: G('lTx'), lSg: G('lSg'), lCh: G('lCh'),
+      btnSum: G('btnSum'), btnSet: G('btnSet'), btnExp: G('btnExp'),
+      btnMic: G('btnMic'), recBadge: G('recBadge'), micLbl: G('micLbl'),
+      txEmpty: G('txEmpty'), txChunks: G('txChunks'), txScroll: G('txScroll'),
+      bBadge: G('bBadge'), btnRef: G('btnRef'), spIco: G('spIco'), cdTxt: G('cdTxt'),
+      sugFeed: G('sugFeed'),
+      chatThread: G('chatThread'), chatEmpty: G('chatEmpty'),
+      chatInp: G('chatInp'), btnSend: G('btnSend'),
+      modal: G('modal'), btnClose: G('btnClose'), btnRst: G('btnRst'), btnSav: G('btnSav'),
+      fKey: G('fKey'), fMod: G('fMod'), fWhisper: G('fWhisper'),
+      fCS: G('fCS'), fCC: G('fCC'), fRS: G('fRS'),
+      fST: G('fST'), fSMT: G('fSMT'), fCT: G('fCT'), fCMT: G('fCMT'),
+      fSP: G('fSP'), fDP: G('fDP'), fCP: G('fCP'),
+      toastDock: G('toastDock'),
+    };
 
-    state.isRecording = true;
-    setRecordingUI(true);
-    startRefreshCycle();
-    el.btnSummary.disabled = false;
-  } catch (err) {
-    const msg = err.name === 'NotAllowedError'
-      ? 'Microphone permission denied. Allow mic access and try again.'
-      : `Mic error: ${err.message}`;
-    toast(msg, true);
-  }
-}
+    // ─── CONFIG ───────────────────────────────────────────────────────────────────
+    function loadCfg() {
+      try {
+        const r = sessionStorage.getItem('tm5');
+        return r ? { ...DEFAULTS, ...JSON.parse(r) } : { ...DEFAULTS };
+      } catch { return { ...DEFAULTS }; }
+    }
 
-function stopRecording() {
-  if (state.mediaRecorder?.state === 'recording') {
-    state.mediaRecorder.requestData();
-    state.mediaRecorder.stop();
-    state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
-  }
-  clearInterval(state.chunkFlushTimerId);
-  clearInterval(state.refreshTimerId);
-  clearInterval(state.countdownTimerId);
-  state.isRecording = false;
-  setRecordingUI(false);
-}
+    function saveCfg() {
+      sessionStorage.setItem('tm5', JSON.stringify(S.cfg));
+    }
 
-function setRecordingUI(on) {
-  el.btnMic.classList.toggle('recording', on);
-  el.micHint.textContent  = on ? 'Click to stop recording' : 'Click to start recording\nTranscript appends every ~30s';
-  el.recStatus.textContent = on ? 'RECORDING' : 'IDLE';
-  el.statusChip.textContent = on ? 'RECORDING' : 'IDLE';
-  el.statusChip.classList.toggle('live', on);
-  el.btnRefresh.disabled    = !on;
-}
+    function openModal() {
+      // Populate every field from current config
+      $.fKey.value = S.cfg.apiKey;
+      $.fMod.value = S.cfg.model;
+      $.fWhisper.value = S.cfg.whisperModel;
+      $.fCS.value = S.cfg.ctxSug;
+      $.fCC.value = S.cfg.ctxChat;
+      $.fRS.value = S.cfg.refreshSec;
+      $.fST.value = S.cfg.sugTemp;
+      $.fSMT.value = S.cfg.sugMaxTok;
+      $.fCT.value = S.cfg.chatTemp;
+      $.fCMT.value = S.cfg.chatMaxTok;
+      $.fSP.value = S.cfg.sugP;
+      $.fDP.value = S.cfg.detP;
+      $.fCP.value = S.cfg.chatP;
+      $.modal.classList.remove('hidden');
+      $.fKey.focus();
+    }
 
-// ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
-async function doTranscribe(blob) {
-  const form = new FormData();
-  form.append('audio', blob, 'audio.webm');
-  const t0 = Date.now();
-  try {
-    const res  = await fetch('/api/transcribe', {
-      method: 'POST',
-      headers: { 'x-groq-api-key': state.settings.apiKey },
-      body: form,
-    });
-    const data = await res.json();
-    if (!res.ok) { toast(`Transcription error: ${data.error}`, true); return; }
-    showLatency('transcribe', Date.now() - t0);
-    if (data.text?.trim()) appendChunk(data.text.trim());
-  } catch (e) {
-    toast(`Network error: ${e.message}`, true);
-  }
-}
+    function closeModal() { $.modal.classList.add('hidden'); }
 
-function appendChunk(text) {
-  const chunk = { text, timestamp: new Date() };
-  state.transcriptChunks.push(chunk);
-  el.transcriptEmpty?.remove();
+    function saveModal() {
+      // Read every field — nothing is hardcoded
+      S.cfg.apiKey = $.fKey.value.trim();
+      S.cfg.model = $.fMod.value.trim() || DEFAULTS.model;
+      S.cfg.whisperModel = $.fWhisper.value.trim() || DEFAULTS.whisperModel;
+      S.cfg.ctxSug = parseFloat($.fCS.value) || 800;
+      S.cfg.ctxChat = parseFloat($.fCC.value) || 2000;
+      S.cfg.refreshSec = parseFloat($.fRS.value) || 30;
+      S.cfg.sugTemp = parseFloat($.fST.value);
+      S.cfg.sugMaxTok = parseInt($.fSMT.value) || 900;
+      S.cfg.chatTemp = parseFloat($.fCT.value);
+      S.cfg.chatMaxTok = parseInt($.fCMT.value) || 1000;
+      S.cfg.sugP = $.fSP.value.trim() || DEF_SP;
+      S.cfg.detP = $.fDP.value.trim() || DEF_DP;
+      S.cfg.chatP = $.fCP.value.trim() || DEF_CP;
+      saveCfg();
+      closeModal();
+      toast('Settings saved.');
+    }
 
-  const div = document.createElement('div');
-  div.className = 'transcript-chunk';
-  div.innerHTML = `
-    <div class="chunk-time">${fmt(chunk.timestamp)}</div>
-    <div class="chunk-text">${esc(text)}</div>
-  `;
-  el.transcriptChunks.appendChild(div);
-  el.transcriptScroll.scrollTop = el.transcriptScroll.scrollHeight;
-}
+    function resetModal() {
+      if (!confirm('Reset all settings to defaults?')) return;
+      Object.assign(S.cfg, DEFAULTS);
+      saveCfg();
+      openModal();
+    }
 
-// ─── SUGGESTIONS ─────────────────────────────────────────────────────────────
-function startRefreshCycle() {
-  state.secondsLeft = state.settings.refreshSeconds;
+    // ─── TOAST ────────────────────────────────────────────────────────────────────
+    function toast(msg, err = false) {
+      const d = document.createElement('div');
+      d.className = 'toast' + (err ? ' err' : '');
+      d.textContent = msg;
+      $.toastDock.appendChild(d);
+      setTimeout(() => d.remove(), 3500);
+    }
 
-  state.countdownTimerId = setInterval(() => {
-    state.secondsLeft = Math.max(0, state.secondsLeft - 1);
-    el.refreshTimer.textContent = `auto-refresh in ${state.secondsLeft}s`;
-  }, 1000);
+    // ─── LATENCY DISPLAY ──────────────────────────────────────────────────────────
+    function lat(type, ms) {
+      const tag = type === 'tx' ? $.lTx : type === 'sg' ? $.lSg : $.lCh;
+      const lbl = type === 'tx' ? 'Transcribe' : type === 'sg' ? 'Suggest' : 'Chat token';
+      tag.textContent = `${lbl}: ${Math.round(ms)}ms`;
+      tag.className = 'lpill show ' + (ms < 3000 ? 'fast' : 'slow');
+    }
 
-  state.refreshTimerId = setInterval(async () => {
-    await fetchSuggestions();
-    state.secondsLeft = state.settings.refreshSeconds;
-  }, state.settings.refreshSeconds * 1000);
-}
+    // ─── RECORDING ────────────────────────────────────────────────────────────────
+    async function startRec() {
+      if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus' : 'audio/webm';
+        S.mr = new MediaRecorder(stream, { mimeType: mime });
+        S.chunks = [];
 
-async function fetchSuggestions() {
-  const text = state.transcriptChunks.map(c => c.text).join(' ');
-  if (!text.trim()) return;
+        S.mr.ondataavailable = e => { if (e.data.size > 0) S.chunks.push(e.data); };
+        S.mr.onstop = async () => {
+          if (!S.chunks.length) return;
+          const blob = new Blob(S.chunks, { type: mime });
+          S.chunks = [];
+          await doTranscribe(blob);
+        };
 
-  setLoading(true);
-  renderSkeletons();
+        const ms = S.cfg.refreshSec * 1000;
+        S.mr.start(ms);
+        S.tF = setInterval(() => {
+          if (S.mr?.state === 'recording') S.mr.requestData();
+        }, ms);
 
-  const words   = text.split(' ');
-  const context = words.slice(-state.settings.suggestionCtxWords).join(' ');
-  const avoidList = state.suggestionBatches
-    .flatMap(b => b.suggestions)
-    .slice(-6)
-    .map(s => `- ${s.title}`)
-    .join('\n');
-
-  const userMsg = [
-    `LIVE TRANSCRIPT (last ~${state.settings.suggestionCtxWords} words):`,
-    context,
-    avoidList ? `\nPREVIOUS SUGGESTIONS (do NOT repeat):\n${avoidList}` : '',
-    '\nGenerate exactly 3 suggestions now.',
-  ].filter(Boolean).join('\n');
-
-  const t0 = Date.now();
-  try {
-    const res  = await fetch('/api/suggestions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-groq-api-key': state.settings.apiKey,
-      },
-      body: JSON.stringify({
-        systemPrompt: state.settings.suggestPrompt,
-        userMessage:  userMsg,
-        model:        state.settings.model,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) { toast(`Suggestions error: ${data.error}`, true); removeSkeletons(); return; }
-
-    showLatency('suggest', Date.now() - t0);
-    const batch = { suggestions: data.suggestions, timestamp: new Date() };
-    state.suggestionBatches.unshift(batch);
-    renderAllBatches();
-    el.batchMeta.textContent = `${state.suggestionBatches.length} Batch${state.suggestionBatches.length !== 1 ? 'es' : ''}`;
-  } catch (e) {
-    toast(`Network error: ${e.message}`, true);
-    removeSkeletons();
-  } finally {
-    setLoading(false);
-  }
-}
-
-function renderAllBatches() {
-  el.suggestionsFeed.innerHTML = '';
-  state.suggestionBatches.forEach((batch, i) => {
-    const batchEl = document.createElement('div');
-    batchEl.className = 'suggestion-batch ' + (i === 0 ? 'batch-new' : 'batch-old');
-
-    const header = document.createElement('div');
-    header.className = 'batch-header';
-    header.innerHTML = `
-      <span class="batch-timestamp">${i === 0 ? 'Latest — ' : ''}${fmt(batch.timestamp)}</span>
-      <span class="batch-header-line"></span>
-    `;
-    batchEl.appendChild(header);
-
-    batch.suggestions.forEach(s => batchEl.appendChild(buildCard(s)));
-    el.suggestionsFeed.appendChild(batchEl);
-  });
-}
-
-function buildCard(s) {
-  const meta = TYPE_META[s.type] ?? TYPE_META.QUESTION;
-  const card = document.createElement('div');
-  card.className = 'suggestion-card';
-  card.style.setProperty('--card-accent', meta.color);
-  card.setAttribute('role', 'button');
-  card.setAttribute('tabindex', '0');
-
-  const confLabel = s.confidence ? `<span class="card-confidence">${s.confidence}</span>` : '';
-  const quoteHtml = s.evidenceQuote
-    ? `<div class="card-quote">${esc(s.evidenceQuote)}</div>` : '';
-
-  card.innerHTML = `
-    <div class="card-top">
-      <span class="card-badge">${meta.label}</span>
-      ${confLabel}
-    </div>
-    <div class="card-title">${esc(s.title)}</div>
-    <div class="card-preview">${esc(s.preview)}</div>
-    ${quoteHtml}
-  `;
-
-  const onClick = () => expandSuggestion(s);
-  card.addEventListener('click', onClick);
-  card.addEventListener('keydown', e => { if (e.key === 'Enter') onClick(); });
-  return card;
-}
-
-function renderSkeletons() {
-  const wrap = document.createElement('div');
-  wrap.className = 'skeleton-batch';
-  wrap.innerHTML = `
-    <div class="skeleton-label"></div>
-    <div class="skeleton-card"></div>
-    <div class="skeleton-card" style="animation-delay:.1s"></div>
-    <div class="skeleton-card" style="animation-delay:.2s"></div>
-  `;
-  el.suggestionsFeed.insertBefore(wrap, el.suggestionsFeed.firstChild);
-}
-
-function removeSkeletons() {
-  el.suggestionsFeed.querySelector('.skeleton-batch')?.remove();
-}
-
-function setLoading(on) {
-  if (on) el.refreshArrow.classList.add('spinning');
-  else    el.refreshArrow.classList.remove('spinning');
-}
-
-// ─── CHAT ─────────────────────────────────────────────────────────────────────
-async function expandSuggestion(s) {
-  await sendChat(s.detail_prompt || s.preview, true);
-}
-
-async function sendChat(message, isExpansion = false) {
-  if (!message.trim()) return;
-  const transcript = state.transcriptChunks.map(c => c.text).join(' ');
-  const ctxWords   = transcript.split(' ').slice(-state.settings.chatCtxWords).join(' ');
-
-  el.chatEmpty?.remove();
-  addBubble('user', message);
-  state.chatHistory.push({ role: 'user', content: message, timestamp: new Date() });
-  el.chatInput.value = '';
-  el.chatInput.style.height = 'auto';
-  el.btnSend.disabled = true;
-
-  const assistantBubble = addBubble('assistant', '');
-  const contentEl = assistantBubble.querySelector('.msg-content');
-  let fullText = '';
-  let firstTokenTime = null;
-  const t0 = Date.now();
-
-  try {
-    const res = await fetch('/api/chat/stream', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-groq-api-key': state.settings.apiKey,
-      },
-      body: JSON.stringify({
-        message,
-        transcriptContext: ctxWords,
-        chatHistory: state.chatHistory.slice(-10),
-        isExpansion,
-        systemPrompt: isExpansion ? state.settings.detailPrompt : state.settings.chatPrompt,
-        model: state.settings.model,
-      }),
-    });
-
-    const reader  = res.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const lines = decoder.decode(value, { stream: true }).split('\n');
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const payload = line.slice(6).trim();
-        if (payload === '[DONE]') break;
-        try {
-          const { delta, error } = JSON.parse(payload);
-          if (error) throw new Error(error);
-          if (delta) {
-            if (!firstTokenTime) {
-              firstTokenTime = Date.now();
-              showLatency('chat', firstTokenTime - t0);
-            }
-            fullText += delta;
-            contentEl.textContent = fullText;
-            el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
-          }
-        } catch (_) { /* partial */ }
+        S.rec = true;
+        setRecUI(true);
+        startCycle();
+        $.btnSum.disabled = false;
+      } catch (e) {
+        toast(e.name === 'NotAllowedError'
+          ? 'Microphone permission denied. Allow mic access in your browser and try again.'
+          : `Mic error: ${e.message}`, true);
       }
     }
-    state.chatHistory.push({ role: 'assistant', content: fullText, timestamp: new Date() });
-  } catch (e) {
-    contentEl.textContent = `Error: ${e.message}`;
-    toast(`Chat error: ${e.message}`, true);
-  } finally {
-    el.btnSend.disabled = false;
-  }
-}
 
-function addBubble(role, text) {
-  const div = document.createElement('div');
-  div.className = `chat-msg ${role}`;
-  div.innerHTML = `
-    <span class="msg-role">${role === 'user' ? 'You' : 'TwinMind'}</span>
-    <div class="msg-content">${esc(text)}</div>
+    function stopRec() {
+      if (S.mr?.state === 'recording') {
+        S.mr.requestData();
+        S.mr.stop();
+        S.mr.stream.getTracks().forEach(t => t.stop());
+      }
+      [S.tF, S.tR, S.tC].forEach(clearInterval);
+      S.rec = false;
+      setRecUI(false);
+    }
+
+    function setRecUI(on) {
+      $.btnMic.classList.toggle('rec', on);
+      $.micLbl.innerHTML = on
+        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Transcript updates every ~' + S.cfg.refreshSec + 's</span>'
+        : 'Click mic to start recording<br><span style="font-size:11px;color:var(--text-f)">Transcript appends every ~' + S.cfg.refreshSec + 's</span>';
+      $.recBadge.textContent = on ? 'RECORDING' : 'IDLE';
+      $.sTxt.textContent = on ? 'RECORDING' : 'IDLE';
+      $.sPill.classList.toggle('live', on);
+      $.btnRef.disabled = !on;
+    }
+
+    // ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
+    async function doTranscribe(blob) {
+      const form = new FormData();
+      form.append('audio', blob, 'audio.webm');
+      const t0 = Date.now();
+      try {
+        const res = await fetch('/api/transcribe', {
+          method: 'POST',
+          headers: {
+            'x-groq-api-key': S.cfg.apiKey,
+            'x-whisper-model': S.cfg.whisperModel,   // dynamic — user can change in Settings
+            'x-whisper-language': 'en',                  // could also be made user-editable
+          },
+          body: form,
+        });
+        const data = await res.json();
+        if (!res.ok) { toast(`Transcription error: ${data.error}`, true); return; }
+        lat('tx', Date.now() - t0);
+        if (data.text?.trim()) addChunk(data.text.trim());
+      } catch (e) { toast(`Network error: ${e.message}`, true); }
+    }
+
+    function addChunk(text) {
+      S.tx.push({ text, ts: new Date() });
+      $.txEmpty?.remove();
+      const d = document.createElement('div');
+      d.className = 'tx-chunk';
+      d.innerHTML = `<div class="tx-time">${fmt(S.tx.at(-1).ts)}</div><div class="tx-text">${esc(text)}</div>`;
+      $.txChunks.appendChild(d);
+      $.txScroll.scrollTop = $.txScroll.scrollHeight;
+    }
+
+    // ─── SUGGESTIONS ──────────────────────────────────────────────────────────────
+    function startCycle() {
+      S.sl = S.cfg.refreshSec;
+      S.tC = setInterval(() => {
+        S.sl = Math.max(0, S.sl - 1);
+        $.cdTxt.textContent = `auto-refresh in ${S.sl}s`;
+      }, 1000);
+      S.tR = setInterval(async () => {
+        await fetchSug();
+        S.sl = S.cfg.refreshSec;
+      }, S.cfg.refreshSec * 1000);
+    }
+
+    async function fetchSug() {
+      const all = S.tx.map(c => c.text).join(' ');
+      if (!all.trim()) return;
+
+      setSpin(true);
+      renderSkels();
+
+      const context = all.split(' ').slice(-S.cfg.ctxSug).join(' ');
+      const avoidList = S.batches
+        .flatMap(b => b.suggestions)
+        .slice(-6)
+        .map(s => `- ${s.title}`)
+        .join('\n');
+
+      const userMsg = [
+        `LIVE TRANSCRIPT (last ~${S.cfg.ctxSug} words):`,
+        context,
+        avoidList ? `\nPREVIOUS SUGGESTIONS TO AVOID REPEATING:\n${avoidList}` : '',
+        '\nGenerate exactly 3 suggestions now.',
+      ].filter(Boolean).join('\n');
+
+      const t0 = Date.now();
+      try {
+        const res = await fetch('/api/suggestions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-groq-api-key': S.cfg.apiKey,
+          },
+          // Every parameter sent explicitly — nothing left to backend defaults
+          body: JSON.stringify({
+            systemPrompt: S.cfg.sugP,
+            userMessage: userMsg,
+            model: S.cfg.model,
+            temperature: S.cfg.sugTemp,
+            maxTokens: S.cfg.sugMaxTok,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { toast(`Suggestions error: ${data.error}`, true); rmSkels(); return; }
+        lat('sg', Date.now() - t0);
+        S.batches.unshift({ suggestions: data.suggestions, ts: new Date() });
+        renderBatches();
+        $.bBadge.textContent = `${S.batches.length} Batch${S.batches.length !== 1 ? 'es' : ''}`;
+      } catch (e) {
+        toast(`Network error: ${e.message}`, true);
+        rmSkels();
+      } finally {
+        setSpin(false);
+      }
+    }
+
+    function renderBatches() {
+      $.sugFeed.innerHTML = '';
+      S.batches.forEach((b, i) => {
+        const w = document.createElement('div');
+        w.className = 'batch-grp ' + (i === 0 ? 'b-new' : 'b-old');
+        const r = document.createElement('div');
+        r.className = 'batch-row';
+        r.innerHTML = `<span class="batch-ts">${i === 0 ? 'Latest — ' : ''}${fmt(b.ts)}</span><span class="batch-hr"></span>`;
+        w.appendChild(r);
+        b.suggestions.forEach(s => w.appendChild(mkCard(s)));
+        $.sugFeed.appendChild(w);
+      });
+    }
+
+    function mkCard(s) {
+      const m = TYPE[s.type] ?? TYPE.QUESTION;
+      const c = document.createElement('div');
+      c.className = 'sc';
+      c.style.setProperty('--ca', m.ac);
+      c.setAttribute('role', 'button');
+      c.setAttribute('tabindex', '0');
+      c.innerHTML = `
+    <div class="sc-top">
+      <span class="sc-badge" style="color:${m.tx};background:${m.bg};border-color:${m.br}">${m.l}</span>
+      ${s.confidence ? `<span class="sc-conf">${s.confidence} confidence</span>` : ''}
+    </div>
+    <div class="sc-title">${esc(s.title)}</div>
+    <div class="sc-prev">${esc(s.preview)}</div>
+    ${s.evidenceQuote ? `<div class="sc-quote">${esc(s.evidenceQuote)}</div>` : ''}
   `;
-  el.chatMessages.appendChild(div);
-  el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
-  return div;
-}
+      const fn = () => expCard(s);
+      c.addEventListener('click', fn);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
+      return c;
+    }
 
-// ─── END-OF-MEETING SUMMARY ───────────────────────────────────────────────────
-async function generateSummary() {
-  const transcript = state.transcriptChunks.map(c => c.text).join(' ');
-  if (!transcript.trim()) { toast('No transcript to summarize.', true); return; }
-  const prompt = `Generate a concise end-of-meeting summary from this transcript.
+    function renderSkels() {
+      const w = document.createElement('div');
+      w.className = 'sk-wrap';
+      w.innerHTML = '<div class="sk-h"></div><div class="sk-c"></div><div class="sk-c"></div><div class="sk-c"></div>';
+      $.sugFeed.insertBefore(w, $.sugFeed.firstChild);
+    }
 
-Include:
-1. Key decisions made
-2. Action items (with owner if identifiable)
-3. Open questions or unresolved topics
-4. Key facts discussed
+    function rmSkels() { $.sugFeed.querySelector('.sk-wrap')?.remove(); }
+    function setSpin(on) { $.spIco.classList.toggle('go', on); }
 
-Be specific, reference actual content, and keep it under 300 words.`;
-  await sendChat(prompt, false);
-}
+    // ─── CHAT ──────────────────────────────────────────────────────────────────────
+    async function expCard(s) {
+      await doChat(s.detail_prompt || s.preview, true);
+    }
 
-// ─── EXPORT ───────────────────────────────────────────────────────────────────
-function exportSession() {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    settings: {
-      model: state.settings.model,
-      suggestionCtxWords: state.settings.suggestionCtxWords,
-      chatCtxWords: state.settings.chatCtxWords,
-      refreshSeconds: state.settings.refreshSeconds,
-    },
-    transcript: state.transcriptChunks.map(c => ({
-      timestamp: c.timestamp.toISOString(),
-      text: c.text,
-    })),
-    suggestionBatches: state.suggestionBatches.map(b => ({
-      timestamp: b.timestamp.toISOString(),
-      suggestions: b.suggestions,
-    })),
-    chatHistory: state.chatHistory.map(m => ({
-      timestamp: m.timestamp.toISOString(),
-      role: m.role,
-      content: m.content,
-    })),
-  };
+    async function doChat(msg, isExp = false) {
+      if (!msg.trim()) return;
 
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `twinmind-session-${new Date().toISOString().slice(0,19).replace(/[T:]/g,'-')}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast('Session exported.');
-}
+      const txCtx = S.tx.map(c => c.text).join(' ').split(' ').slice(-S.cfg.ctxChat).join(' ');
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-function fmt(date) {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
+      $.chatEmpty?.remove();
+      addBubble('user', msg);
+      S.chat.push({ role: 'user', content: msg, ts: new Date() });
+      $.chatInp.value = '';
+      $.chatInp.style.height = 'auto';
+      $.btnSend.disabled = true;
 
-function esc(str) {
-  return String(str ?? '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+      const aEl = addBubble('assistant', '');
+      const body = aEl.querySelector('.cm-body');
+      let full = '', firstTok = null;
+      const t0 = Date.now();
 
-// ─── EVENT LISTENERS ─────────────────────────────────────────────────────────
-el.btnMic.addEventListener('click', () => {
-  state.isRecording ? stopRecording() : startRecording();
-});
+      try {
+        const res = await fetch('/api/chat/stream', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-groq-api-key': S.cfg.apiKey,
+          },
+          // Every parameter sent explicitly — no hidden defaults
+          body: JSON.stringify({
+            message: msg,
+            transcriptContext: txCtx,
+            chatHistory: S.chat.slice(-10).map(m => ({ role: m.role, content: m.content })),
+            isExpansion: isExp,
+            systemPrompt: isExp ? S.cfg.detP : S.cfg.chatP,
+            model: S.cfg.model,
+            temperature: S.cfg.chatTemp,
+            maxTokens: S.cfg.chatMaxTok,
+          }),
+        });
 
-el.btnRefresh.addEventListener('click', async () => {
-  if (state.mediaRecorder?.state === 'recording') state.mediaRecorder.requestData();
-  await fetchSuggestions();
-  state.secondsLeft = state.settings.refreshSeconds;
-});
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
 
-el.chatInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    if (!el.btnSend.disabled) sendChat(el.chatInput.value);
-  }
-});
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          for (const line of dec.decode(value, { stream: true }).split('\n')) {
+            if (!line.startsWith('data: ')) continue;
+            const p = line.slice(6).trim();
+            if (p === '[DONE]') break;
+            try {
+              const { delta, error } = JSON.parse(p);
+              if (error) throw new Error(error);
+              if (delta) {
+                if (!firstTok) { firstTok = Date.now(); lat('ch', firstTok - t0); }
+                full += delta;
+                body.textContent = full;
+                $.chatThread.scrollTop = $.chatThread.scrollHeight;
+              }
+            } catch (_) { /* partial SSE chunk — ignore */ }
+          }
+        }
+        S.chat.push({ role: 'assistant', content: full, ts: new Date() });
+      } catch (e) {
+        body.textContent = `Error: ${e.message}`;
+        toast(`Chat error: ${e.message}`, true);
+      } finally {
+        $.btnSend.disabled = false;
+      }
+    }
 
-el.chatInput.addEventListener('input', () => {
-  el.chatInput.style.height = 'auto';
-  el.chatInput.style.height = Math.min(el.chatInput.scrollHeight, 110) + 'px';
-  el.btnSend.disabled = !el.chatInput.value.trim();
-});
+    function addBubble(role, text) {
+      const d = document.createElement('div');
+      d.className = `cm ${role}`;
+      d.innerHTML = `<span class="cm-role">${role === 'user' ? 'You' : 'TwinMind'}</span><div class="cm-body">${esc(text)}</div>`;
+      $.chatThread.appendChild(d);
+      $.chatThread.scrollTop = $.chatThread.scrollHeight;
+      return d;
+    }
 
-el.btnSend.addEventListener('click', () => sendChat(el.chatInput.value));
-el.btnSummary.addEventListener('click', generateSummary);
-el.btnExport.addEventListener('click', exportSession);
+    // ─── END SUMMARY ──────────────────────────────────────────────────────────────
+    async function doSummary() {
+      if (!S.tx.length) { toast('No transcript to summarize.', true); return; }
+      await doChat('Generate a structured end-of-meeting summary. Include: key decisions made, action items with owners if identifiable, open questions, key facts discussed. Reference specific content. Under 300 words.', false);
+    }
 
-el.btnSettings.addEventListener('click', openSettings);
-el.btnCloseSettings.addEventListener('click', closeSettings);
-el.btnSaveSettings.addEventListener('click', saveSettingsFromModal);
-el.btnResetSettings.addEventListener('click', resetSettings);
-el.overlay.addEventListener('click', e => { if (e.target === el.overlay) closeSettings(); });
+    // ─── EXPORT ───────────────────────────────────────────────────────────────────
+    function doExport() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        // Include settings snapshot so evaluators know exact context windows / prompts used
+        settingsSnapshot: {
+          model: S.cfg.model,
+          whisperModel: S.cfg.whisperModel,
+          ctxSug: S.cfg.ctxSug,
+          ctxChat: S.cfg.ctxChat,
+          refreshSec: S.cfg.refreshSec,
+          sugTemp: S.cfg.sugTemp,
+          chatTemp: S.cfg.chatTemp,
+        },
+        transcript: S.tx.map(c => ({ ts: c.ts.toISOString(), text: c.text })),
+        suggestionBatches: S.batches.map(b => ({
+          ts: b.ts.toISOString(),
+          suggestions: b.suggestions,
+        })),
+        chatHistory: S.chat.map(m => ({
+          ts: m.ts.toISOString(),
+          role: m.role,
+          content: m.content,
+        })),
+      };
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeSettings();
-});
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `twinmind-session-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('Session exported.');
+    }
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
-if (!state.settings.apiKey) openSettings();
-</script>
+    // ─── UTILS ────────────────────────────────────────────────────────────────────
+    function fmt(d) {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
 
+    function esc(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ─── EVENT LISTENERS ──────────────────────────────────────────────────────────
+    $.btnMic.addEventListener('click', () => S.rec ? stopRec() : startRec());
+
+    $.btnRef.addEventListener('click', async () => {
+      if (S.mr?.state === 'recording') S.mr.requestData();
+      await fetchSug();
+      S.sl = S.cfg.refreshSec;
+    });
+
+    $.chatInp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!$.btnSend.disabled) doChat($.chatInp.value);
+      }
+    });
+
+    $.chatInp.addEventListener('input', () => {
+      $.chatInp.style.height = 'auto';
+      $.chatInp.style.height = Math.min($.chatInp.scrollHeight, 110) + 'px';
+      $.btnSend.disabled = !$.chatInp.value.trim();
+    });
+
+    $.btnSend.addEventListener('click', () => doChat($.chatInp.value));
+    $.btnSum.addEventListener('click', doSummary);
+    $.btnExp.addEventListener('click', doExport);
+    $.btnSet.addEventListener('click', openModal);
+    $.btnClose.addEventListener('click', closeModal);
+    $.btnSav.addEventListener('click', saveModal);
+    $.btnRst.addEventListener('click', resetModal);
+    $.modal.addEventListener('click', e => { if (e.target === $.modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // ─── INIT ─────────────────────────────────────────────────────────────────────
+    if (!S.cfg.apiKey) openModal();
+  </script>
 </body>
+
 </html>
