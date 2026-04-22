@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getGroqClient } from '../utils/groq.js';
 import { DEFAULT_SETTINGS } from '../utils/prompts.js';
 import { Blob as BufferBlob } from 'node:buffer';
 
@@ -22,22 +21,29 @@ router.post('/', upload.single('audio'), async (req, res) => {
   const startMs = Date.now();
 
   try {
-    const groq = getGroqClient(apiKey);
-
-    // Groq SDK accepts a File/Blob-like object for multipart uploads.
-    // Some runtimes (notably Node 18) don't expose global File, so we build a Blob and attach a name.
+    // Use direct multipart request to Groq for max compatibility with browser-recorded blobs.
     const BlobImpl = globalThis.Blob ?? BufferBlob;
     const audioBlob = new BlobImpl([req.file.buffer], { type: req.file.mimetype || 'audio/webm' });
-    // Add a name so the SDK can treat this as a file.
-    // (Works even though Blob types don't formally include `name`.)
-    audioBlob.name = req.file.originalname || 'audio.webm';
 
-    const result = await groq.audio.transcriptions.create({
-      file: audioBlob,
-      model: whisperModel,
-      response_format: 'verbose_json',
-      language: whisperLanguage,
+    const form = new FormData();
+    form.append('file', audioBlob, req.file.originalname || 'audio.webm');
+    form.append('model', whisperModel);
+    form.append('response_format', 'verbose_json');
+    if (whisperLanguage) form.append('language', whisperLanguage);
+
+    const rsp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: form,
     });
+
+    const result = await rsp.json();
+    if (!rsp.ok) {
+      const msg = result?.error?.message || result?.error || 'Transcription request failed';
+      return res.status(rsp.status).json({ error: msg });
+    }
 
     return res.json({
       text: (result.text ?? '').trim(),

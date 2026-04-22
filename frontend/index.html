@@ -1410,9 +1410,10 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus' : 'audio/webm';
-        S.mr = new MediaRecorder(stream, { mimeType: mime });
+        const mime = MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' : null);
+        S.mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
         S.txQueue = [];
         S.txInFlight = false;
 
@@ -1496,7 +1497,8 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       // Very small blobs are often not valid media files for Whisper.
       if (!blob || blob.size < 4_000) return;
       const form = new FormData();
-      form.append('audio', blob, 'audio.webm');
+      const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
+      form.append('audio', blob, `audio.${ext}`);
       const t0 = Date.now();
       try {
         const res = await fetch('/api/transcribe', {
