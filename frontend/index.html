@@ -1299,11 +1299,13 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     // ─── STATE ────────────────────────────────────────────────────────────────────
     const S = {
-      rec: false, mr: null, chunks: [],
+      rec: false, mr: null,
       tx: [], batches: [], chat: [],
       cfg: loadCfg(),
-      tR: null, tC: null, tF: null, sl: 30,
+      tR: null, tC: null, tF: null, tFirst: null, sl: 30,
       sugLoading: false,
+      txQueue: [],
+      txInFlight: false,
     };
 
     // ─── DOM ──────────────────────────────────────────────────────────────────────
@@ -1411,18 +1413,23 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus' : 'audio/webm';
         S.mr = new MediaRecorder(stream, { mimeType: mime });
-        S.chunks = [];
+        S.txQueue = [];
+        S.txInFlight = false;
 
-        S.mr.ondataavailable = e => { if (e.data.size > 0) S.chunks.push(e.data); };
+        S.mr.ondataavailable = e => {
+          if (e.data.size > 0) enqueueTranscribe(e.data);
+        };
         S.mr.onstop = async () => {
-          if (!S.chunks.length) return;
-          const blob = new Blob(S.chunks, { type: mime });
-          S.chunks = [];
-          await doTranscribe(blob);
+          // Final chunk usually arrives via ondataavailable on stop.
         };
 
         const ms = S.cfg.refreshSec * 1000;
         S.mr.start(ms);
+        // Improve perceived responsiveness: request the first chunk early,
+        // then continue on normal refresh cadence.
+        S.tFirst = setTimeout(() => {
+          if (S.mr?.state === 'recording') S.mr.requestData();
+        }, Math.min(8000, ms));
         S.tF = setInterval(() => {
           if (S.mr?.state === 'recording') S.mr.requestData();
         }, ms);
@@ -1438,6 +1445,24 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       }
     }
 
+    function enqueueTranscribe(blob) {
+      S.txQueue.push(blob);
+      void processTranscribeQueue();
+    }
+
+    async function processTranscribeQueue() {
+      if (S.txInFlight) return;
+      S.txInFlight = true;
+      try {
+        while (S.txQueue.length) {
+          const blob = S.txQueue.shift();
+          await doTranscribe(blob);
+        }
+      } finally {
+        S.txInFlight = false;
+      }
+    }
+
     function stopRec() {
       if (S.mr?.state === 'recording') {
         S.mr.requestData();
@@ -1445,6 +1470,10 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         S.mr.stream.getTracks().forEach(t => t.stop());
       }
       [S.tF, S.tR, S.tC].forEach(clearInterval);
+      if (S.tFirst) {
+        clearTimeout(S.tFirst);
+        S.tFirst = null;
+      }
       S.rec = false;
       setRecUI(false);
     }
@@ -1452,7 +1481,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     function setRecUI(on) {
       $.btnMic.classList.toggle('rec', on);
       $.micLbl.innerHTML = on
-        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Transcript updates every ~' + S.cfg.refreshSec + 's</span>'
+        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">First transcript in ~8s, then every ~' + S.cfg.refreshSec + 's</span>'
         : 'Click mic to start recording<br><span style="font-size:11px;color:var(--text-f)">Transcript appends every ~' + S.cfg.refreshSec + 's</span>';
       $.recBadge.textContent = on ? 'RECORDING' : 'IDLE';
       $.sTxt.textContent = on ? 'RECORDING' : 'IDLE';
