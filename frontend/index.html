@@ -1424,7 +1424,9 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         };
 
         const ms = S.cfg.refreshSec * 1000;
-        S.mr.start(ms);
+        // Start without timeslice and control chunk flushes ourselves.
+        // This avoids tiny/partial blobs caused by mixed timeslice + requestData usage.
+        S.mr.start();
         // Improve perceived responsiveness: request the first chunk early,
         // then continue on normal refresh cadence.
         S.tFirst = setTimeout(() => {
@@ -1491,6 +1493,8 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     // ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
     async function doTranscribe(blob) {
+      // Very small blobs are often not valid media files for Whisper.
+      if (!blob || blob.size < 4_000) return;
       const form = new FormData();
       form.append('audio', blob, 'audio.webm');
       const t0 = Date.now();
