@@ -11,7 +11,9 @@ const app = express();
 // Security
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'] }));
-app.options('*', cors());
+// Express 5 + path-to-regexp no longer accepts '*' for routes.
+// Use a regex to cover all OPTIONS preflight requests.
+app.options(/.*/, cors());
 
 app.use(express.json({ limit: '10mb' }));
 

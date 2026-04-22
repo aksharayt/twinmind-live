@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { getGroqClient } from '../utils/groq.js';
 import { DEFAULT_SETTINGS } from '../utils/prompts.js';
+import { Blob as BufferBlob } from 'node:buffer';
 
 const router = Router();
 const upload = multer({
@@ -22,10 +23,17 @@ router.post('/', upload.single('audio'), async (req, res) => {
 
   try {
     const groq = getGroqClient(apiKey);
-    const audioFile = new File([req.file.buffer], 'audio.webm', { type: req.file.mimetype });
+
+    // Groq SDK accepts a File/Blob-like object for multipart uploads.
+    // Some runtimes (notably Node 18) don't expose global File, so we build a Blob and attach a name.
+    const BlobImpl = globalThis.Blob ?? BufferBlob;
+    const audioBlob = new BlobImpl([req.file.buffer], { type: req.file.mimetype || 'audio/webm' });
+    // Add a name so the SDK can treat this as a file.
+    // (Works even though Blob types don't formally include `name`.)
+    audioBlob.name = req.file.originalname || 'audio.webm';
 
     const result = await groq.audio.transcriptions.create({
-      file: audioFile,
+      file: audioBlob,
       model: whisperModel,
       response_format: 'verbose_json',
       language: whisperLanguage,

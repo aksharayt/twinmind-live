@@ -61,7 +61,7 @@ When answering:
 export const DEFAULT_SETTINGS = {
   // Model names — verified against Groq's model catalog
   // The assignment says "GPT-OSS 120B" — on Groq this is served as:
-  model:                  'meta-llama/llama-4-maverick-17b-128e-instruct',
+  model:                  'openai/gpt-oss-120b',
   whisperModel:           'whisper-large-v3',
   whisperLanguage:        'en',
 
