@@ -23,10 +23,16 @@ router.post('/', upload.single('audio'), async (req, res) => {
   try {
     // Use direct multipart request to Groq for max compatibility with browser-recorded blobs.
     const BlobImpl = globalThis.Blob ?? BufferBlob;
-    const audioBlob = new BlobImpl([req.file.buffer], { type: req.file.mimetype || 'audio/webm' });
+    const mime = req.file.mimetype || 'audio/webm';
+    const name = req.file.originalname || (mime.includes('ogg') ? 'chunk.ogg' : 'chunk.webm');
+    const buf = req.file.buffer;
+    const FileCtor = globalThis.File;
+    const filePart = FileCtor
+      ? new FileCtor([buf], name, { type: mime })
+      : Object.assign(new BlobImpl([buf], { type: mime }), { name });
 
     const form = new FormData();
-    form.append('file', audioBlob, req.file.originalname || 'audio.webm');
+    form.append('file', filePart);
     form.append('model', whisperModel);
     form.append('response_format', 'verbose_json');
     if (whisperLanguage) form.append('language', whisperLanguage);

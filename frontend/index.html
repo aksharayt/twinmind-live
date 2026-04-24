@@ -1300,9 +1300,10 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     // ─── STATE ────────────────────────────────────────────────────────────────────
     const S = {
       rec: false, mr: null,
+      recMime: 'audio/webm',
       tx: [], batches: [], chat: [],
       cfg: loadCfg(),
-      tR: null, tC: null, tF: null, tFirst: null, sl: 30,
+      tR: null, tC: null, sl: 30,
       sugLoading: false,
       txQueue: [],
       txInFlight: false,
@@ -1369,16 +1370,19 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       S.cfg.ctxSug = parseFloat($.fCS.value) || 800;
       S.cfg.ctxChat = parseFloat($.fCC.value) || 2000;
       S.cfg.refreshSec = parseFloat($.fRS.value) || 30;
-      S.cfg.sugTemp = parseFloat($.fST.value);
-      S.cfg.sugMaxTok = parseInt($.fSMT.value) || 900;
-      S.cfg.chatTemp = parseFloat($.fCT.value);
-      S.cfg.chatMaxTok = parseInt($.fCMT.value) || 1000;
+      const st = parseFloat($.fST.value);
+      S.cfg.sugTemp = Number.isFinite(st) ? st : DEFAULTS.sugTemp;
+      S.cfg.sugMaxTok = parseInt($.fSMT.value, 10) || DEFAULTS.sugMaxTok;
+      const ct = parseFloat($.fCT.value);
+      S.cfg.chatTemp = Number.isFinite(ct) ? ct : DEFAULTS.chatTemp;
+      S.cfg.chatMaxTok = parseInt($.fCMT.value, 10) || DEFAULTS.chatMaxTok;
       S.cfg.sugP = $.fSP.value.trim() || DEF_SP;
       S.cfg.detP = $.fDP.value.trim() || DEF_DP;
       S.cfg.chatP = $.fCP.value.trim() || DEF_CP;
       saveCfg();
       closeModal();
       toast('Settings saved.');
+      syncChatSendBtn();
     }
 
     function resetModal() {
@@ -1405,37 +1409,36 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       tag.className = 'lpill show ' + (ms < 3000 ? 'fast' : 'slow');
     }
 
+    function clearRecTimers() {
+      [S.tR, S.tC].forEach(t => { if (t) clearInterval(t); });
+      S.tR = S.tC = null;
+    }
+
     // ─── RECORDING ────────────────────────────────────────────────────────────────
     async function startRec() {
       if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
       try {
+        clearRecTimers();
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mime = MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' : null);
+        const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : (MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' : ''));
         S.mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+        S.recMime = S.mr.mimeType || mime || 'audio/webm';
         S.txQueue = [];
         S.txInFlight = false;
 
         S.mr.ondataavailable = e => {
-          if (e.data.size > 0) enqueueTranscribe(e.data);
-        };
-        S.mr.onstop = async () => {
-          // Final chunk usually arrives via ondataavailable on stop.
+          if (e.data && e.data.size > 0) enqueueTranscribe(e.data);
         };
 
-        const ms = S.cfg.refreshSec * 1000;
-        // Start without timeslice and control chunk flushes ourselves.
-        // This avoids tiny/partial blobs caused by mixed timeslice + requestData usage.
-        S.mr.start();
-        // Improve perceived responsiveness: request the first chunk early,
-        // then continue on normal refresh cadence.
-        S.tFirst = setTimeout(() => {
-          if (S.mr?.state === 'recording') S.mr.requestData();
-        }, Math.min(8000, ms));
-        S.tF = setInterval(() => {
-          if (S.mr?.state === 'recording') S.mr.requestData();
-        }, ms);
+        // Single chunking strategy: timeslice ONLY. Mixing start() + requestData()
+        // produces invalid/corrupt WebM fragments and Groq errors.
+        const refreshMs = Math.max(3000, (S.cfg.refreshSec || 30) * 1000);
+        const txSliceMs = Math.min(15000, Math.max(5000, refreshMs));
+        S.mr.start(txSliceMs);
 
         S.rec = true;
         setRecUI(true);
@@ -1468,15 +1471,11 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     function stopRec() {
       if (S.mr?.state === 'recording') {
-        S.mr.requestData();
+        try { S.mr.requestData(); } catch (_) {}
         S.mr.stop();
         S.mr.stream.getTracks().forEach(t => t.stop());
       }
-      [S.tF, S.tR, S.tC].forEach(clearInterval);
-      if (S.tFirst) {
-        clearTimeout(S.tFirst);
-        S.tFirst = null;
-      }
+      clearRecTimers();
       S.rec = false;
       setRecUI(false);
     }
@@ -1484,7 +1483,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     function setRecUI(on) {
       $.btnMic.classList.toggle('rec', on);
       $.micLbl.innerHTML = on
-        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">First transcript in ~8s, then every ~' + S.cfg.refreshSec + 's</span>'
+        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Transcript appends every ~5–15s (reliable chunks), suggestions every ~' + S.cfg.refreshSec + 's</span>'
         : 'Click mic to start recording<br><span style="font-size:11px;color:var(--text-f)">Transcript appends every ~' + S.cfg.refreshSec + 's</span>';
       $.recBadge.textContent = on ? 'RECORDING' : 'IDLE';
       $.sTxt.textContent = on ? 'RECORDING' : 'IDLE';
@@ -1494,11 +1493,11 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     // ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
     async function doTranscribe(blob) {
-      // Very small blobs are often not valid media files for Whisper.
-      if (!blob || blob.size < 4_000) return;
+      if (!blob || blob.size < 200) return;
       const form = new FormData();
-      const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
-      form.append('audio', blob, `audio.${ext}`);
+      const mime = blob.type || S.recMime || 'audio/webm';
+      const ext = mime.includes('ogg') ? 'ogg' : 'webm';
+      form.append('audio', blob, `chunk.${ext}`);
       const t0 = Date.now();
       try {
         const res = await fetch('/api/transcribe', {
@@ -1511,7 +1510,10 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
           body: form,
         });
         const data = await res.json();
-        if (!res.ok) { toast(`Transcription error: ${data.error}`, true); return; }
+        if (!res.ok) {
+          toast(`Transcription error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data.error)}`, true);
+          return;
+        }
         lat('tx', Date.now() - t0);
         if (data.text?.trim()) {
           addChunk(data.text.trim());
@@ -1547,8 +1549,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       if (S.sugLoading) return;
       const all = S.tx.map(c => c.text).join(' ');
       if (!all.trim()) {
-        showSugMsg('No transcript yet. Start recording, then reload suggestions.', true);
-        toast('No transcript yet. Start recording first.', true);
+        showSugMsg('No transcript yet. Speak for a few seconds after starting the mic, then wait for the first transcript line.', true);
         return;
       }
 
@@ -1670,7 +1671,8 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     }
 
     async function doChat(msg, isExp = false) {
-      if (!msg.trim()) return;
+      if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
+      if (!msg.trim()) { toast('Type a message first.', true); return; }
 
       const txCtx = S.tx.map(c => c.text).join(' ').split(' ').slice(-S.cfg.ctxChat).join(' ');
 
@@ -1813,7 +1815,9 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     $.btnMic.addEventListener('click', () => S.rec ? stopRec() : startRec());
 
     $.btnRef.addEventListener('click', async () => {
-      if (S.mr?.state === 'recording') S.mr.requestData();
+      if (S.mr?.state === 'recording') {
+        try { S.mr.requestData(); } catch (_) {}
+      }
       await fetchSug();
       S.sl = S.cfg.refreshSec;
     });
@@ -1821,14 +1825,18 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     $.chatInp.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (!$.btnSend.disabled) doChat($.chatInp.value);
+        if (S.cfg.apiKey) doChat($.chatInp.value);
       }
     });
+
+    function syncChatSendBtn() {
+      $.btnSend.disabled = !S.cfg.apiKey;
+    }
 
     $.chatInp.addEventListener('input', () => {
       $.chatInp.style.height = 'auto';
       $.chatInp.style.height = Math.min($.chatInp.scrollHeight, 110) + 'px';
-      $.btnSend.disabled = !$.chatInp.value.trim();
+      syncChatSendBtn();
     });
 
     $.btnSend.addEventListener('click', () => doChat($.chatInp.value));
@@ -1842,6 +1850,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     // ─── INIT ─────────────────────────────────────────────────────────────────────
+    syncChatSendBtn();
     if (!S.cfg.apiKey) openModal();
   </script>
 </body>
