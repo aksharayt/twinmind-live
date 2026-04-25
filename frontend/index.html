@@ -1447,13 +1447,13 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       if (!S.audioParts.length) return;
       const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
       S.audioParts = [];
-      if (merged.size >= 200) enqueueTranscribe(merged);
+      if (merged.size >= 8000) enqueueTranscribe(merged);
     }
 
     function scheduleAudioPart(blob) {
       if (!blob?.size) return;
       S.audioParts.push(blob);
-      if (audioAccBytes() >= 6_000) {
+      if (audioAccBytes() >= 30_000) {
         flushAudioPartsToQueue();
         return;
       }
@@ -1461,7 +1461,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       S.audioFlushTimer = setTimeout(() => {
         S.audioFlushTimer = null;
         flushAudioPartsToQueue();
-      }, 400);
+      }, 3000);
     }
 
     // ─── RECORDING ────────────────────────────────────────────────────────────────
@@ -1548,7 +1548,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     // ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
     async function doTranscribe(blob) {
-      if (!blob || blob.size < 100) return;
+      if (!blob || blob.size < 8000) return;
       const form = new FormData();
       const mime = blob.type || S.recMime || 'audio/webm';
       const ext = mime.includes('ogg') ? 'ogg' : 'webm';
