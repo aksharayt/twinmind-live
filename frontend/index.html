@@ -1134,6 +1134,11 @@
         <div class="sect-title">API &amp; Models</div>
         <label class="fld">Groq API Key<input type="password" id="fKey" placeholder="gsk_…"
             autocomplete="off" /></label>
+        <label class="fld">
+          Backend base URL (no trailing slash)
+          <span class="fld-desc">Use your Render URL (e.g. https://…onrender.com) so chat streams reliably. Leave empty to use this site’s /api proxy only.</span>
+          <input type="url" id="fBase" placeholder="https://your-backend.onrender.com" autocomplete="off" />
+        </label>
         <div class="fld-2">
           <label class="fld">
             LLM Model (suggestions + chat)
@@ -1274,6 +1279,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     // ─── ALL DEFAULTS — every one of these is editable in Settings ───────────────
     const DEFAULTS = {
       apiKey: '',
+      apiBase: 'https://twinmind-backend-6wc0.onrender.com',
       model: 'openai/gpt-oss-120b',
       whisperModel: 'whisper-large-v3',
       ctxSug: 800,
@@ -1322,7 +1328,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       chatThread: G('chatThread'), chatEmpty: G('chatEmpty'),
       chatInp: G('chatInp'), btnSend: G('btnSend'),
       modal: G('modal'), btnClose: G('btnClose'), btnRst: G('btnRst'), btnSav: G('btnSav'),
-      fKey: G('fKey'), fMod: G('fMod'), fWhisper: G('fWhisper'),
+      fKey: G('fKey'), fBase: G('fBase'), fMod: G('fMod'), fWhisper: G('fWhisper'),
       fCS: G('fCS'), fCC: G('fCC'), fRS: G('fRS'),
       fST: G('fST'), fSMT: G('fSMT'), fCT: G('fCT'), fCMT: G('fCMT'),
       fSP: G('fSP'), fDP: G('fDP'), fCP: G('fCP'),
@@ -1341,9 +1347,18 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       sessionStorage.setItem('tm5', JSON.stringify(S.cfg));
     }
 
+    /** Prefer direct backend URL (CORS) so SSE is not buffered by static hosts. */
+    function apiUrl(path) {
+      const b = String(S.cfg.apiBase ?? '').trim().replace(/\/$/, '');
+      if (!b) return path;
+      const p = path.startsWith('/') ? path : `/${path}`;
+      return b + p;
+    }
+
     function openModal() {
       // Populate every field from current config
       $.fKey.value = S.cfg.apiKey;
+      $.fBase.value = S.cfg.apiBase ?? '';
       $.fMod.value = S.cfg.model;
       $.fWhisper.value = S.cfg.whisperModel;
       $.fCS.value = S.cfg.ctxSug;
@@ -1365,6 +1380,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     function saveModal() {
       // Read every field — nothing is hardcoded
       S.cfg.apiKey = $.fKey.value.trim();
+      S.cfg.apiBase = $.fBase.value.trim().replace(/\/$/, '');
       S.cfg.model = $.fMod.value.trim() || DEFAULTS.model;
       S.cfg.whisperModel = $.fWhisper.value.trim() || DEFAULTS.whisperModel;
       S.cfg.ctxSug = parseFloat($.fCS.value) || 800;
@@ -1471,7 +1487,6 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     function stopRec() {
       if (S.mr?.state === 'recording') {
-        try { S.mr.requestData(); } catch (_) {}
         S.mr.stop();
         S.mr.stream.getTracks().forEach(t => t.stop());
       }
@@ -1500,7 +1515,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       form.append('audio', blob, `chunk.${ext}`);
       const t0 = Date.now();
       try {
-        const res = await fetch('/api/transcribe', {
+        const res = await fetch(apiUrl('/api/transcribe'), {
           method: 'POST',
           headers: {
             'x-groq-api-key': S.cfg.apiKey,
@@ -1517,7 +1532,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         lat('tx', Date.now() - t0);
         if (data.text?.trim()) {
           addChunk(data.text.trim());
-          await fetchSug();
+          void fetchSug();
         }
       } catch (e) { toast(`Network error: ${e.message}`, true); }
     }
@@ -1574,7 +1589,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
       const t0 = Date.now();
       try {
-        const res = await fetch('/api/suggestions', {
+        const res = await fetch(apiUrl('/api/suggestions'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1688,55 +1703,103 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       let full = '', firstTok = null;
       const t0 = Date.now();
 
-      try {
-        const res = await fetch('/api/chat/stream', {
+      const chatPayload = {
+        message: msg,
+        transcriptContext: txCtx,
+        // Do not duplicate the current user message: backend appends `message` as the last user turn.
+        chatHistory: S.chat.slice(0, -1).slice(-10).map(m => ({ role: m.role, content: m.content })),
+        isExpansion: isExp,
+        systemPrompt: isExp ? S.cfg.detP : S.cfg.chatP,
+        model: S.cfg.model,
+        temperature: S.cfg.chatTemp,
+        maxTokens: S.cfg.chatMaxTok,
+      };
+
+      async function runCompleteFallback() {
+        const r2 = await fetch(apiUrl('/api/chat/complete'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-groq-api-key': S.cfg.apiKey,
           },
-          // Every parameter sent explicitly — no hidden defaults
-          body: JSON.stringify({
-            message: msg,
-            transcriptContext: txCtx,
-            chatHistory: S.chat.slice(-10).map(m => ({ role: m.role, content: m.content })),
-            isExpansion: isExp,
-            systemPrompt: isExp ? S.cfg.detP : S.cfg.chatP,
-            model: S.cfg.model,
-            temperature: S.cfg.chatTemp,
-            maxTokens: S.cfg.chatMaxTok,
-          }),
+          body: JSON.stringify(chatPayload),
+        });
+        const j = await r2.json().catch(() => ({}));
+        if (!r2.ok) throw new Error(j.error || r2.statusText || 'Chat failed');
+        const t = String(j.text || '').trim();
+        if (t) {
+          full = t;
+          body.innerHTML = fmtMsg(full);
+          $.chatThread.scrollTop = $.chatThread.scrollHeight;
+        }
+      }
+
+      function applySseLine(line) {
+        const raw = line.trimEnd();
+        if (!raw.startsWith('data: ')) return;
+        const p = raw.slice(6).trim();
+        if (p === '[DONE]') return;
+        let obj;
+        try { obj = JSON.parse(p); } catch { return; }
+        if (obj.error) throw new Error(obj.error);
+        const d = obj.delta;
+        if (typeof d === 'string' && d) {
+          if (!firstTok) { firstTok = Date.now(); lat('ch', firstTok - t0); }
+          full += d;
+          body.innerHTML = fmtMsg(full);
+          $.chatThread.scrollTop = $.chatThread.scrollHeight;
+        }
+      }
+
+      try {
+        const res = await fetch(apiUrl('/api/chat/stream'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-groq-api-key': S.cfg.apiKey,
+          },
+          body: JSON.stringify(chatPayload),
         });
 
-        const reader = res.body.getReader();
-        const dec = new TextDecoder();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          for (const line of dec.decode(value, { stream: true }).split('\n')) {
-            if (!line.startsWith('data: ')) continue;
-            const p = line.slice(6).trim();
-            if (p === '[DONE]') break;
-            try {
-              const { delta, error } = JSON.parse(p);
-              if (error) throw new Error(error);
-              if (delta) {
-                if (!firstTok) { firstTok = Date.now(); lat('ch', firstTok - t0); }
-                full += delta;
-                body.innerHTML = fmtMsg(full);
-                $.chatThread.scrollTop = $.chatThread.scrollHeight;
-              }
-            } catch (_) { /* partial SSE chunk — ignore */ }
-          }
+        if (!res.ok) {
+          const t = await res.text();
+          let errMsg = t;
+          try { errMsg = JSON.parse(t).error || errMsg; } catch (_) {}
+          throw new Error(typeof errMsg === 'string' ? errMsg : res.statusText);
         }
-        S.chat.push({ role: 'assistant', content: full, ts: new Date() });
+
+        const reader = res.body?.getReader();
+        if (!reader) {
+          await runCompleteFallback();
+        } else {
+          const dec = new TextDecoder();
+          let sseBuf = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            sseBuf += dec.decode(value, { stream: true });
+            let nl;
+            while ((nl = sseBuf.indexOf('\n')) !== -1) {
+              const line = sseBuf.slice(0, nl);
+              sseBuf = sseBuf.slice(nl + 1);
+              applySseLine(line);
+            }
+          }
+          sseBuf.split('\n').forEach(l => { if (l.trim()) applySseLine(l); });
+        }
+
+        if (!full.trim()) await runCompleteFallback();
       } catch (e) {
-        body.textContent = `Error: ${e.message}`;
-        toast(`Chat error: ${e.message}`, true);
-      } finally {
-        $.btnSend.disabled = false;
+        try {
+          await runCompleteFallback();
+        } catch (e2) {
+          body.textContent = `Error: ${e2.message}`;
+          toast(`Chat error: ${e2.message}`, true);
+        }
       }
+      if (full.trim()) S.chat.push({ role: 'assistant', content: full, ts: new Date() });
+      else if (!body.textContent.startsWith('Error:')) body.textContent = 'No response from model. Try again or check model name in Settings.';
+      syncChatSendBtn();
     }
 
     function addBubble(role, text) {
@@ -1760,6 +1823,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         exportedAt: new Date().toISOString(),
         // Include settings snapshot so evaluators know exact context windows / prompts used
         settingsSnapshot: {
+          apiBase: S.cfg.apiBase,
           model: S.cfg.model,
           whisperModel: S.cfg.whisperModel,
           ctxSug: S.cfg.ctxSug,
@@ -1815,9 +1879,6 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     $.btnMic.addEventListener('click', () => S.rec ? stopRec() : startRec());
 
     $.btnRef.addEventListener('click', async () => {
-      if (S.mr?.state === 'recording') {
-        try { S.mr.requestData(); } catch (_) {}
-      }
       await fetchSug();
       S.sl = S.cfg.refreshSec;
     });
