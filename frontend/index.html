@@ -1441,13 +1441,12 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     function flushAudioPartsToQueue() {
       if (S.audioFlushTimer) {
-        clearTimeout(S.audioFlushTimer);
+        clearInterval(S.audioFlushTimer);
         S.audioFlushTimer = null;
       }
       if (!S.audioParts.length) return;
       const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
-      S.audioParts = [];
-      if (merged.size >= 1_000) enqueueTranscribe(merged);
+      if (merged.size >= 1000) enqueueTranscribe(merged);
     }
 
     function scheduleAudioPart(blob) {
@@ -1488,12 +1487,21 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         }
 
         S.mr.ondataavailable = e => {
-          if (e.data && e.data.size > 0) scheduleAudioPart(e.data);
+          if (e.data && e.data.size > 0) {
+            S.audioParts.push(e.data);
+          }
         };
 
         // Fixed timeslice: stable WebM segments. Do not tie to suggestion refresh (often too short).
         const TX_SLICE_MS = 3000;
-        S.mr.start(TX_SLICE_MS);
+        // Send full accumulated audio every 8 seconds
+        S.mr.start(250); // collect in tiny pieces
+        S.audioFlushTimer = setInterval(() => {
+          if (S.audioParts.length === 0) return;
+          // Always include ALL parts from the beginning — WebM needs the header
+          const merged = new Blob(S.audioParts, { type: S.recMime });
+          if (merged.size >= 10_000) enqueueTranscribe(merged);
+        }, 8000);
 
         S.rec = true;
         setRecUI(true);
@@ -1525,11 +1533,20 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     }
 
     function stopRec() {
+      if (S.audioFlushTimer) {
+        clearInterval(S.audioFlushTimer);
+        S.audioFlushTimer = null;
+      }
       if (S.mr?.state === 'recording') {
         S.mr.stop();
         S.mr.stream.getTracks().forEach(t => t.stop());
       }
-      setTimeout(() => flushAudioPartsToQueue(), 400);
+      setTimeout(() => {
+        if (S.audioParts.length) {
+          const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
+          if (merged.size >= 1000) enqueueTranscribe(merged);
+        }
+      }, 400);
       clearRecTimers();
       S.rec = false;
       setRecUI(false);
