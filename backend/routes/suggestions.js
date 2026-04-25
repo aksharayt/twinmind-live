@@ -6,42 +6,39 @@ const router = Router();
 
 function parseJsonLoose(raw) {
   if (!raw || typeof raw !== 'string') return null;
-  try { return JSON.parse(raw); } catch {}
+  
+  // Strip markdown fences
+  let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  
+  try { return JSON.parse(cleaned); } catch {}
 
-  const first = raw.indexOf('{');
-  const last = raw.lastIndexOf('}');
+  // Extract JSON object
+  const first = cleaned.indexOf('{');
+  const last = cleaned.lastIndexOf('}');
   if (first !== -1 && last !== -1 && last > first) {
-    try { return JSON.parse(raw.slice(first, last + 1)); } catch {}
+    try { return JSON.parse(cleaned.slice(first, last + 1)); } catch {}
   }
-
   return null;
 }
 
 function normalizeSuggestions(parsed) {
   if (!parsed) return null;
   const arr = Array.isArray(parsed.suggestions) ? parsed.suggestions : null;
-  if (!arr) return null;
+  if (!arr || arr.length === 0) return null;
 
   return {
-    suggestions: arr.map((s, i) => {
-      const title = String(s.title || `Suggestion ${i + 1}`).trim();
-      const preview = String(s.preview || s.summary || '').trim();
-      const detail_prompt = String(s.detail_prompt || s.detailPrompt || preview || '').trim();
-      const evidenceQuote = typeof s.evidenceQuote === 'string' ? s.evidenceQuote.trim() : '';
-      const confidence = typeof s.confidence === 'string' ? s.confidence.trim() : 'med';
-      return {
-        type: String(s.type || 'CLARIFY').toUpperCase(),
-        title,
-        preview,
-        detail_prompt,
-        evidenceQuote: evidenceQuote || preview.slice(0, 80),
-        confidence: confidence || 'med',
-      };
-    }).filter(s => s.title && s.preview && s.detail_prompt),
+    suggestions: arr.map((s, i) => ({
+      type: String(s.type || 'QUESTION').toUpperCase(),
+      title: String(s.title || `Suggestion ${i + 1}`).trim(),
+      preview: String(s.preview || s.summary || '').trim(),
+      detail_prompt: String(s.detail_prompt || s.detailPrompt || s.preview || '').trim(),
+      evidenceQuote: String(s.evidenceQuote || '').trim().slice(0, 120),
+      confidence: String(s.confidence || 'med').trim(),
+    })).filter(s => s.title && s.preview && s.detail_prompt),
   };
 }
 
-async function callSuggestionsModel(groq, body, useJsonObject) {
+async function callModel(groq, body) {
   const {
     systemPrompt,
     userMessage,
@@ -50,66 +47,64 @@ async function callSuggestionsModel(groq, body, useJsonObject) {
     maxTokens,
   } = body;
 
-  const resolvedModel = model ?? DEFAULT_SETTINGS.model;
-  const resolvedPrompt = systemPrompt ?? SUGGESTION_SYSTEM_PROMPT;
-  const resolvedTemperature = typeof temperature === 'number' ? temperature : DEFAULT_SETTINGS.suggestionTemperature;
-  const resolvedMaxTokens = typeof maxTokens === 'number' ? maxTokens : DEFAULT_SETTINGS.maxSuggestionTokens;
-
-  const req = {
-    model: resolvedModel,
-    temperature: resolvedTemperature,
-    max_tokens: resolvedMaxTokens,
+  // NEVER use response_format: json_object — causes json_validate_failed on Groq
+  return groq.chat.completions.create({
+    model: model ?? DEFAULT_SETTINGS.model,
+    temperature: typeof temperature === 'number' ? temperature : DEFAULT_SETTINGS.suggestionTemperature,
+    max_tokens: typeof maxTokens === 'number' ? maxTokens : DEFAULT_SETTINGS.maxSuggestionTokens,
     messages: [
-      { role: 'system', content: resolvedPrompt },
+      { role: 'system', content: systemPrompt ?? SUGGESTION_SYSTEM_PROMPT },
       { role: 'user', content: userMessage },
     ],
-  };
-  if (useJsonObject) req.response_format = { type: 'json_object' };
-  return groq.chat.completions.create(req);
+    // No response_format — parse manually
+  });
 }
 
 router.post('/', async (req, res) => {
   const apiKey = req.headers['x-groq-api-key'];
   if (!apiKey) return res.status(401).json({ error: 'Missing x-groq-api-key header' });
 
-  const { userMessage, model } = req.body;
+  const { userMessage } = req.body;
   if (!userMessage?.trim()) return res.status(400).json({ error: 'userMessage is required' });
 
-  const resolvedModel = model ?? DEFAULT_SETTINGS.model;
   const startMs = Date.now();
 
   try {
     const groq = getGroqClient(apiKey);
 
-    // Do NOT use response_format json_object with models that emit reasoning or invalid JSON
-    // (Groq returns 400 json_validate_failed). Parse plain text as JSON instead.
-    let completion = await callSuggestionsModel(groq, req.body, false);
-    let raw = completion.choices[0]?.message?.content ?? '{}';
+    // First attempt
+    let completion = await callModel(groq, req.body);
+    let raw = completion.choices[0]?.message?.content ?? '';
     let parsed = normalizeSuggestions(parseJsonLoose(raw));
 
+    // Retry with stricter instruction if first attempt failed
     if (!validateSuggestions(parsed)) {
-      completion = await callSuggestionsModel(groq, {
+      console.warn('[suggestions] First attempt invalid, retrying...');
+      const retryBody = {
         ...req.body,
-        userMessage: `${userMessage}\n\nReply with ONLY one JSON object (no markdown). Shape: {"suggestions":[{"type":"QUESTION","title":"...","preview":"...","evidenceQuote":"...","confidence":"high","detail_prompt":"..."}, ...]} with exactly 3 items.`,
-      }, false);
-      raw = completion.choices[0]?.message?.content ?? '{}';
+        temperature: 0.2, // lower temp for more reliable JSON
+        userMessage: `${req.body.userMessage}\n\nCRITICAL: Your previous response was not valid JSON. Reply with ONLY a raw JSON object. No markdown, no explanation, no backticks. Start your response with { and end with }. Use exactly this shape: {"suggestions":[{"type":"QUESTION","title":"short title","preview":"one sentence value","evidenceQuote":"phrase from transcript","confidence":"high","detail_prompt":"expanded question"}]} with exactly 3 items.`,
+      };
+      completion = await callModel(groq, retryBody);
+      raw = completion.choices[0]?.message?.content ?? '';
       parsed = normalizeSuggestions(parseJsonLoose(raw));
     }
 
     if (!validateSuggestions(parsed)) {
-      return res.status(500).json({ error: 'Model response failed schema validation — try lowering suggestion temperature in Settings.' });
+      console.error('[suggestions] Both attempts failed. Raw:', raw?.slice(0, 300));
+      return res.status(500).json({ 
+        error: 'Could not generate valid suggestions. Try refreshing or check your prompt in Settings.' 
+      });
     }
 
     return res.json({
       suggestions: parsed.suggestions.slice(0, 3),
-      model: resolvedModel,
+      model: req.body.model ?? DEFAULT_SETTINGS.model,
       latencyMs: Date.now() - startMs,
     });
   } catch (err) {
     console.error('[suggestions]', err?.message || err);
-    const msg = String(err?.message || err || 'Suggestions request failed');
-    const status = /400|json_validate|invalid_request/i.test(msg) ? 502 : 500;
-    return res.status(status).json({ error: msg });
+    return res.status(500).json({ error: String(err?.message || 'Suggestions request failed') });
   }
 });
 

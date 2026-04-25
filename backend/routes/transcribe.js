@@ -13,22 +13,26 @@ router.post('/', upload.single('audio'), async (req, res) => {
   const apiKey = req.headers['x-groq-api-key'];
   if (!apiKey) return res.status(401).json({ error: 'Missing x-groq-api-key header' });
   if (!req.file) return res.status(400).json({ error: 'No audio file uploaded' });
-  if (!req.file.buffer || req.file.buffer.length < 512) {
-    return res.status(400).json({ error: 'Audio chunk too small — record a bit longer before sending.' });
+
+  // Lower threshold — browser chunks can be small but still valid
+  if (!req.file.buffer || req.file.buffer.length < 100) {
+    return res.status(400).json({ error: 'Audio chunk too small.' });
   }
 
-  // All parameters are overridable — client sends them, we fall back to defaults
   const whisperModel = req.headers['x-whisper-model'] ?? DEFAULT_SETTINGS.whisperModel;
   const whisperLanguage = req.headers['x-whisper-language'] ?? DEFAULT_SETTINGS.whisperLanguage;
-
   const startMs = Date.now();
 
   try {
-    // Use direct multipart request to Groq for max compatibility with browser-recorded blobs.
     const BlobImpl = globalThis.Blob ?? BufferBlob;
-    const mime = req.file.mimetype || 'audio/webm';
-    const name = req.file.originalname || (mime.includes('ogg') ? 'chunk.ogg' : 'chunk.webm');
     const buf = req.file.buffer;
+    
+    // Force webm mime — browsers sometimes send wrong content-type
+    // Whisper accepts webm, ogg, mp4, wav, flac, m4a
+    const rawMime = req.file.mimetype || 'audio/webm';
+    const mime = rawMime.includes('ogg') ? 'audio/ogg' : 'audio/webm';
+    const name = mime.includes('ogg') ? 'audio.ogg' : 'audio.webm';
+
     const FileCtor = globalThis.File;
     const filePart = FileCtor
       ? new FileCtor([buf], name, { type: mime })
@@ -37,32 +41,34 @@ router.post('/', upload.single('audio'), async (req, res) => {
     const form = new FormData();
     form.append('file', filePart);
     form.append('model', whisperModel);
-    // json is enough for .text; verbose_json is larger and some clients send marginal blobs.
-    form.append('response_format', 'json');
+    form.append('response_format', 'verbose_json'); // verbose gives us duration + segments
     if (whisperLanguage) form.append('language', whisperLanguage);
 
     const rsp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
     });
 
     const result = await rsp.json();
     if (!rsp.ok) {
-      const msg = result?.error?.message || result?.error || 'Transcription request failed';
+      const msg = result?.error?.message || result?.error || 'Transcription failed';
+      console.error('[transcribe] Groq error:', msg, '| file size:', buf.length, '| mime:', mime);
       return res.status(rsp.status).json({ error: msg });
     }
 
+    const text = (result.text ?? '').trim();
+    console.log(`[transcribe] OK: ${text.length} chars in ${Date.now() - startMs}ms`);
+    
     return res.json({
-      text: (result.text ?? '').trim(),
+      text,
       duration: result.duration ?? 0,
+      segments: result.segments ?? [],
       whisperModel,
       latencyMs: Date.now() - startMs,
     });
   } catch (err) {
-    console.error('[transcribe]', err.message);
+    console.error('[transcribe] Exception:', err.message);
     return res.status(500).json({ error: err.message });
   }
 });
