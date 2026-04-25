@@ -1029,6 +1029,36 @@
         transform: translateY(0)
       }
     }
+    
+    .sum-section { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .sum-section:last-child { border-bottom: none; }
+    .sum-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--text-m); margin-bottom: 10px;
+    }
+    .sum-para { font-size: 13.5px; line-height: 1.75; color: var(--text-b); }
+    .sum-item {
+      display: flex; gap: 10px; padding: 10px 0;
+      border-bottom: 1px solid var(--border); align-items: flex-start;
+    }
+    .sum-item:last-child { border-bottom: none; }
+    .sum-item-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--blue); flex-shrink: 0; margin-top: 6px;
+    }
+    .sum-item-dot.green { background: var(--green); }
+    .sum-item-dot.amber { background: var(--amber); }
+    .sum-item-text { font-size: 13px; line-height: 1.6; color: var(--text-b); }
+    .sum-item-owner {
+      font-size: 11px; font-weight: 600; color: var(--blue);
+      background: var(--blue-l); border: 1px solid var(--blue-b);
+      padding: 1px 8px; border-radius: 100px; margin-right: 6px;
+    }
+    .sum-meta {
+      font-size: 11px; color: var(--text-f);
+      padding: 12px 22px; border-bottom: 1px solid var(--border);
+      display: flex; gap: 16px;
+    }
   </style>
 </head>
 
@@ -1055,6 +1085,7 @@
     </div>
 
     <div class="tb-right">
+      <button class="btn btn-out" id="btnViewSum" style="display:none">View Summary</button>
       <button class="btn btn-out" id="btnSum" disabled>End Summary</button>
       <button class="btn btn-out" id="btnSet">Settings</button>
       <button class="btn btn-out" id="btnExp">Export Session</button>
@@ -1222,6 +1253,26 @@
       </div>
     </div>
   </div>
+  <!-- SUMMARY MODAL -->
+  <div class="overlay hidden" id="sumModal" role="dialog" aria-modal="true">
+    <div class="modal" style="width:780px;max-width:95vw">
+      <div class="modal-head">
+        <span class="modal-title">Meeting Summary</span>
+        <button class="modal-x" id="btnSumClose">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="sumBody" style="gap:0;padding:0">
+        <div style="padding:32px;text-align:center;color:var(--text-f);font-size:13px" id="sumLoading">
+          Generating summary…
+        </div>
+      </div>
+      <div class="modal-foot" style="justify-content:flex-end">
+        <div class="modal-btns">
+          <button class="btn btn-out" id="btnSumCopy">Copy</button>
+          <button class="btn btn-out" id="btnSumClose2">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="toast-dock" id="toastDock"></div>
 
@@ -1298,6 +1349,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     // ─── SUGGESTION TYPE DISPLAY MAP ─────────────────────────────────────────────
     const TYPE = {
+      ACTION_ITEM: { l: 'Action Item', ac: 'var(--green)', bg: 'var(--green-l)', br: 'var(--green-b)', tx: '#065f46' },
       QUESTION: { l: 'Question to Ask', ac: 'var(--blue)', bg: 'var(--blue-l)', br: 'var(--blue-b)', tx: '#1d4ed8' },
       TALKING_POINT: { l: 'Talking Point', ac: 'var(--teal)', bg: 'var(--teal-l)', br: 'var(--green-b)', tx: '#065f46' },
       ANSWER: { l: 'Answer', ac: 'var(--amber)', bg: 'var(--amber-l)', br: 'var(--amber-b)', tx: 'var(--amber)' },
@@ -1550,6 +1602,12 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       clearRecTimers();
       S.rec = false;
       setRecUI(false);
+
+      // Auto-generate summary when recording stops
+      if (S.tx.length > 0) {
+        G('btnViewSum').style.display = 'inline-flex';
+        doSummary();
+      }
     }
 
     function setRecUI(on) {
@@ -1633,12 +1691,12 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       const context = all.split(' ').slice(-S.cfg.ctxSug).join(' ');
       const avoidList = S.batches
         .flatMap(b => b.suggestions)
-        .slice(-6)
+        .slice(-9)
         .map(s => `- ${s.title}`)
         .join('\n');
 
       const userMsg = [
-        `LIVE TRANSCRIPT (last ~${S.cfg.ctxSug} words):`,
+        `LIVE TRANSCRIPT — focus ONLY on the most recent sentences (last ~${S.cfg.ctxSug} words):`,
         context,
         avoidList ? `\nPREVIOUS SUGGESTIONS TO AVOID REPEATING:\n${avoidList}` : '',
         '\nGenerate exactly 3 suggestions now.',
@@ -1869,9 +1927,198 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     }
 
     // ─── END SUMMARY ──────────────────────────────────────────────────────────────
+// ─── SUMMARY ──────────────────────────────────────────────────────────────────
+    let S_summary = null; // cache the last generated summary
+
     async function doSummary() {
       if (!S.tx.length) { toast('No transcript to summarize.', true); return; }
-      await doChat('Generate a structured end-of-meeting summary. Include: key decisions made, action items with owners if identifiable, open questions, key facts discussed. Reference specific content. Under 300 words.', false);
+
+      // Show modal immediately with loading state
+      G('sumModal').classList.remove('hidden');
+      G('sumBody').innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-f);font-size:13px">Generating summary…</div>';
+
+      const fullTx = S.tx.map(c => c.text).join(' ');
+      const duration = S.tx.length > 0
+        ? Math.round((S.tx.at(-1).ts - S.tx[0].ts) / 60000)
+        : 0;
+
+      const summaryPrompt = `You are an expert meeting summarizer. Analyze this meeting transcript and return a structured JSON summary.
+
+    TRANSCRIPT:
+    ${fullTx}
+
+    Return ONLY valid JSON in exactly this shape:
+    {
+      "title": "Meeting title inferred from content (max 8 words)",
+      "duration": "${duration} minutes",
+      "overview": "2-3 sentence overview of what was discussed",
+      "keyDecisions": [
+        "Decision 1 made in the meeting",
+        "Decision 2"
+      ],
+      "actionItems": [
+        {
+          "owner": "Person's name or 'Team' if unclear",
+          "action": "Specific task to complete",
+          "deadline": "Deadline if mentioned, else null"
+        }
+      ],
+      "openQuestions": [
+        "Unresolved question 1",
+        "Unresolved question 2"
+      ],
+      "topics": [
+        {
+          "title": "Topic name",
+          "summary": "2-3 sentence summary of this topic"
+        }
+      ]
+    }
+
+    Rules:
+    - Extract real names from transcript for action item owners
+    - Only include action items explicitly mentioned
+    - Only include decisions actually made, not just discussed
+    - If no open questions, return empty array
+    - Respond ONLY with JSON, no markdown`;
+
+      try {
+        const res = await fetch(apiUrl('/api/chat/complete'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-groq-api-key': S.cfg.apiKey,
+          },
+          body: JSON.stringify({
+            message: summaryPrompt,
+            transcriptContext: '',
+            chatHistory: [],
+            isExpansion: false,
+            systemPrompt: 'You are a meeting summarizer. Return only valid JSON, no markdown, no explanation.',
+            model: S.cfg.model,
+            temperature: 0.2,
+            maxTokens: 2000,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Summary failed');
+
+        // Parse JSON from response
+        let raw = data.text || '';
+        raw = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('Invalid summary format');
+
+        const summary = JSON.parse(match[0]);
+        S_summary = summary;
+        renderSummaryModal(summary, duration);
+
+      } catch (err) {
+        G('sumBody').innerHTML = `<div style="padding:22px;color:var(--red);font-size:13px">Failed to generate summary: ${esc(err.message)}</div>`;
+      }
+    }
+
+    function renderSummaryModal(s, duration) {
+      const ts = S.tx.length ? fmt(S.tx[0].ts) + ' – ' + fmt(S.tx.at(-1).ts) : '';
+
+      let html = '';
+
+      // Meta bar
+      html += `<div class="sum-meta">
+        <span>${ts}</span>
+        <span>~${duration} min</span>
+        <span>${S.tx.map(c => c.text).join(' ').split(/\s+/).length} words transcribed</span>
+        <span>${S.batches.length} suggestion batches</span>
+      </div>`;
+
+      // Overview
+      html += `<div class="sum-section">
+        <div class="sum-section-title">Overview</div>
+        <p class="sum-para">${esc(s.overview || '')}</p>
+      </div>`;
+
+      // Action Items
+      if (s.actionItems?.length) {
+        html += `<div class="sum-section">
+          <div class="sum-section-title">✅ Action Items (${s.actionItems.length})</div>`;
+        s.actionItems.forEach(item => {
+          html += `<div class="sum-item">
+            <div class="sum-item-dot green"></div>
+            <div class="sum-item-text">
+              <span class="sum-item-owner">${esc(item.owner)}</span>
+              ${esc(item.action)}
+              ${item.deadline ? `<span style="color:var(--amber);font-size:11px;margin-left:6px">📅 ${esc(item.deadline)}</span>` : ''}
+            </div>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      // Key Decisions
+      if (s.keyDecisions?.length) {
+        html += `<div class="sum-section">
+          <div class="sum-section-title">🎯 Key Decisions</div>`;
+        s.keyDecisions.forEach(d => {
+          html += `<div class="sum-item">
+            <div class="sum-item-dot"></div>
+            <div class="sum-item-text">${esc(d)}</div>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      // Open Questions
+      if (s.openQuestions?.length) {
+        html += `<div class="sum-section">
+          <div class="sum-section-title">❓ Open Questions</div>`;
+        s.openQuestions.forEach(q => {
+          html += `<div class="sum-item">
+            <div class="sum-item-dot amber"></div>
+            <div class="sum-item-text">${esc(q)}</div>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      // Topics Discussed
+      if (s.topics?.length) {
+        html += `<div class="sum-section">
+          <div class="sum-section-title">📋 Topics Discussed</div>`;
+        s.topics.forEach(t => {
+          html += `<div style="margin-bottom:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text-h);margin-bottom:3px">${esc(t.title)}</div>
+            <div style="font-size:12.5px;color:var(--text-b);line-height:1.6">${esc(t.summary)}</div>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      G('sumBody').innerHTML = html;
+    }
+
+    function copySummary() {
+      if (!S_summary) return;
+      const s = S_summary;
+      let text = `MEETING SUMMARY\n${'='.repeat(40)}\n\n`;
+      text += `OVERVIEW\n${s.overview}\n\n`;
+      if (s.actionItems?.length) {
+        text += `ACTION ITEMS\n`;
+        s.actionItems.forEach(i => {
+          text += `• [${i.owner}] ${i.action}${i.deadline ? ` (by ${i.deadline})` : ''}\n`;
+        });
+        text += '\n';
+      }
+      if (s.keyDecisions?.length) {
+        text += `KEY DECISIONS\n`;
+        s.keyDecisions.forEach(d => text += `• ${d}\n`);
+        text += '\n';
+      }
+      if (s.openQuestions?.length) {
+        text += `OPEN QUESTIONS\n`;
+        s.openQuestions.forEach(q => text += `• ${q}\n`);
+      }
+      navigator.clipboard.writeText(text).then(() => toast('Summary copied!'));
     }
 
     // ─── EXPORT ───────────────────────────────────────────────────────────────────
@@ -1933,6 +2180,16 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     }
 
     // ─── EVENT LISTENERS ──────────────────────────────────────────────────────────
+    G('btnViewSum').addEventListener('click', () => {
+      G('sumModal').classList.remove('hidden');
+      if (S_summary) renderSummaryModal(S_summary, 0);
+      else doSummary();
+    });
+    G('btnSum').addEventListener('click', doSummary);
+    G('btnSumClose').addEventListener('click', () => G('sumModal').classList.add('hidden'));
+    G('btnSumClose2').addEventListener('click', () => G('sumModal').classList.add('hidden'));
+    G('btnSumCopy').addEventListener('click', copySummary);
+    G('sumModal').addEventListener('click', e => { if (e.target === G('sumModal')) G('sumModal').classList.add('hidden'); });
     $.btnMic.addEventListener('click', () => S.rec ? stopRec() : startRec());
 
     $.btnRef.addEventListener('click', async () => {
