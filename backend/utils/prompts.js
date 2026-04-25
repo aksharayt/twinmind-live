@@ -56,7 +56,7 @@ When answering:
 
 export const DEFAULT_SETTINGS = {
   model:                 'meta-llama/llama-4-scout-17b-16e-instruct',
-  whisperModel:          'whisper-large-v3',
+  whisperModel: 'whisper-large-v3-turbo',
   whisperLanguage:       'en',
   suggestionContextWords: 1500,
   chatContextWords:      3000,
