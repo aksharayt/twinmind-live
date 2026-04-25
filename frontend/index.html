@@ -1307,6 +1307,9 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     const S = {
       rec: false, mr: null,
       recMime: 'audio/webm',
+      /** Merge small MediaRecorder parts so Whisper always gets a valid container. */
+      audioParts: [],
+      audioFlushTimer: null,
       tx: [], batches: [], chat: [],
       cfg: loadCfg(),
       tR: null, tC: null, sl: 30,
@@ -1430,6 +1433,35 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       S.tR = S.tC = null;
     }
 
+    function audioAccBytes() {
+      return S.audioParts.reduce((n, b) => n + (b?.size || 0), 0);
+    }
+
+    function flushAudioPartsToQueue() {
+      if (S.audioFlushTimer) {
+        clearTimeout(S.audioFlushTimer);
+        S.audioFlushTimer = null;
+      }
+      if (!S.audioParts.length) return;
+      const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
+      S.audioParts = [];
+      if (merged.size >= 800) enqueueTranscribe(merged);
+    }
+
+    function scheduleAudioPart(blob) {
+      if (!blob?.size) return;
+      S.audioParts.push(blob);
+      if (audioAccBytes() >= 24_000) {
+        flushAudioPartsToQueue();
+        return;
+      }
+      if (S.audioFlushTimer) clearTimeout(S.audioFlushTimer);
+      S.audioFlushTimer = setTimeout(() => {
+        S.audioFlushTimer = null;
+        flushAudioPartsToQueue();
+      }, 1400);
+    }
+
     // ─── RECORDING ────────────────────────────────────────────────────────────────
     async function startRec() {
       if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
@@ -1445,16 +1477,19 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         S.recMime = S.mr.mimeType || mime || 'audio/webm';
         S.txQueue = [];
         S.txInFlight = false;
+        S.audioParts = [];
+        if (S.audioFlushTimer) {
+          clearTimeout(S.audioFlushTimer);
+          S.audioFlushTimer = null;
+        }
 
         S.mr.ondataavailable = e => {
-          if (e.data && e.data.size > 0) enqueueTranscribe(e.data);
+          if (e.data && e.data.size > 0) scheduleAudioPart(e.data);
         };
 
-        // Single chunking strategy: timeslice ONLY. Mixing start() + requestData()
-        // produces invalid/corrupt WebM fragments and Groq errors.
-        const refreshMs = Math.max(3000, (S.cfg.refreshSec || 30) * 1000);
-        const txSliceMs = Math.min(15000, Math.max(5000, refreshMs));
-        S.mr.start(txSliceMs);
+        // Fixed timeslice: stable WebM segments. Do not tie to suggestion refresh (often too short).
+        const TX_SLICE_MS = 10_000;
+        S.mr.start(TX_SLICE_MS);
 
         S.rec = true;
         setRecUI(true);
@@ -1490,6 +1525,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         S.mr.stop();
         S.mr.stream.getTracks().forEach(t => t.stop());
       }
+      setTimeout(() => flushAudioPartsToQueue(), 400);
       clearRecTimers();
       S.rec = false;
       setRecUI(false);
@@ -1498,7 +1534,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     function setRecUI(on) {
       $.btnMic.classList.toggle('rec', on);
       $.micLbl.innerHTML = on
-        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Transcript appends every ~5–15s (reliable chunks), suggestions every ~' + S.cfg.refreshSec + 's</span>'
+        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Transcript ~every 10s (merged for quality); suggestions every ~' + S.cfg.refreshSec + 's</span>'
         : 'Click mic to start recording<br><span style="font-size:11px;color:var(--text-f)">Transcript appends every ~' + S.cfg.refreshSec + 's</span>';
       $.recBadge.textContent = on ? 'RECORDING' : 'IDLE';
       $.sTxt.textContent = on ? 'RECORDING' : 'IDLE';
@@ -1508,7 +1544,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
 
     // ─── TRANSCRIPTION ────────────────────────────────────────────────────────────
     async function doTranscribe(blob) {
-      if (!blob || blob.size < 200) return;
+      if (!blob || blob.size < 800) return;
       const form = new FormData();
       const mime = blob.type || S.recMime || 'audio/webm';
       const ext = mime.includes('ogg') ? 'ogg' : 'webm';

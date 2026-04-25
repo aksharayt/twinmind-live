@@ -13,6 +13,9 @@ router.post('/', upload.single('audio'), async (req, res) => {
   const apiKey = req.headers['x-groq-api-key'];
   if (!apiKey) return res.status(401).json({ error: 'Missing x-groq-api-key header' });
   if (!req.file) return res.status(400).json({ error: 'No audio file uploaded' });
+  if (!req.file.buffer || req.file.buffer.length < 512) {
+    return res.status(400).json({ error: 'Audio chunk too small — record a bit longer before sending.' });
+  }
 
   // All parameters are overridable — client sends them, we fall back to defaults
   const whisperModel = req.headers['x-whisper-model'] ?? DEFAULT_SETTINGS.whisperModel;
@@ -34,7 +37,8 @@ router.post('/', upload.single('audio'), async (req, res) => {
     const form = new FormData();
     form.append('file', filePart);
     form.append('model', whisperModel);
-    form.append('response_format', 'verbose_json');
+    // json is enough for .text; verbose_json is larger and some clients send marginal blobs.
+    form.append('response_format', 'json');
     if (whisperLanguage) form.append('language', whisperLanguage);
 
     const rsp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
