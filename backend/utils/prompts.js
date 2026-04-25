@@ -72,7 +72,7 @@ When answering:
 - State uncertainty rather than guessing`;
 
 export const DEFAULT_SETTINGS = {
-  model:                 'meta-llama/llama-4-maverick-17b-128e-instruct',
+  model:                 'meta-llama/llama-4-scout-17b-16e-instruct',
   whisperModel:          'whisper-large-v3',
   whisperLanguage:       'en',
   suggestionContextWords: 1500,
