@@ -41,7 +41,7 @@ router.post('/', upload.single('audio'), async (req, res) => {
     const form = new FormData();
     form.append('file', filePart);
     form.append('model', whisperModel);
-    form.append('response_format', 'verbose_json'); // verbose gives us duration + segments
+    form.append('response_format', 'json'); // verbose gives us duration + segments
     if (whisperLanguage) form.append('language', whisperLanguage);
 
     const rsp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
@@ -61,16 +61,8 @@ router.post('/', upload.single('audio'), async (req, res) => {
     console.log(`[transcribe] OK: ${text.length} chars in ${Date.now() - startMs}ms`);
     
     return res.json({
-      text,
-      duration: result.duration ?? 0,
-      segments: result.segments ?? [],
-      whisperModel,
-      latencyMs: Date.now() - startMs,
-    });
-  } catch (err) {
-    console.error('[transcribe] Exception:', err.message);
-    return res.status(500).json({ error: err.message });
-  }
+  text,
+  latencyMs: Date.now() - startMs,
 });
 
 export default router;
