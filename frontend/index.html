@@ -1470,13 +1470,15 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       try {
         clearRecTimers();
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Replace the mime detection block with this:
         const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
-          : (MediaRecorder.isTypeSupported('audio/webm')
-            ? 'audio/webm'
-            : (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' : ''));
-        S.mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-        S.recMime = S.mr.mimeType || mime || 'audio/webm';
+          : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : 'audio/webm';
+
+        S.mr = new MediaRecorder(stream, { mimeType: mime });
+        S.recMime = mime;
         S.txQueue = [];
         S.txInFlight = false;
         S.audioParts = [];
@@ -1490,7 +1492,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         };
 
         // Fixed timeslice: stable WebM segments. Do not tie to suggestion refresh (often too short).
-        const TX_SLICE_MS = 10_000;
+        const TX_SLICE_MS = 3000;
         S.mr.start(TX_SLICE_MS);
 
         S.rec = true;
@@ -1536,7 +1538,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
     function setRecUI(on) {
       $.btnMic.classList.toggle('rec', on);
       $.micLbl.innerHTML = on
-        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Transcript ~every 10s (merged for quality); suggestions every ~' + S.cfg.refreshSec + 's</span>'
+        ? 'Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Transcript ~every 3s (merged for quality); suggestions every ~' + S.cfg.refreshSec + 's</span>'
         : 'Click mic to start recording<br><span style="font-size:11px;color:var(--text-f)">Transcript appends every ~' + S.cfg.refreshSec + 's</span>';
       $.recBadge.textContent = on ? 'RECORDING' : 'IDLE';
       $.sTxt.textContent = on ? 'RECORDING' : 'IDLE';
