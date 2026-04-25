@@ -14,7 +14,6 @@ router.post('/', upload.single('audio'), async (req, res) => {
   if (!apiKey) return res.status(401).json({ error: 'Missing x-groq-api-key header' });
   if (!req.file) return res.status(400).json({ error: 'No audio file uploaded' });
 
-  // Lower threshold — browser chunks can be small but still valid
   if (!req.file.buffer || req.file.buffer.length < 100) {
     return res.status(400).json({ error: 'Audio chunk too small.' });
   }
@@ -26,9 +25,6 @@ router.post('/', upload.single('audio'), async (req, res) => {
   try {
     const BlobImpl = globalThis.Blob ?? BufferBlob;
     const buf = req.file.buffer;
-    
-    // Force webm mime — browsers sometimes send wrong content-type
-    // Whisper accepts webm, ogg, mp4, wav, flac, m4a
     const rawMime = req.file.mimetype || 'audio/webm';
     const mime = rawMime.includes('ogg') ? 'audio/ogg' : 'audio/webm';
     const name = mime.includes('ogg') ? 'audio.ogg' : 'audio.webm';
@@ -41,7 +37,7 @@ router.post('/', upload.single('audio'), async (req, res) => {
     const form = new FormData();
     form.append('file', filePart);
     form.append('model', whisperModel);
-    form.append('response_format', 'json'); // verbose gives us duration + segments
+    form.append('response_format', 'json');
     if (whisperLanguage) form.append('language', whisperLanguage);
 
     const rsp = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
@@ -59,10 +55,13 @@ router.post('/', upload.single('audio'), async (req, res) => {
 
     const text = (result.text ?? '').trim();
     console.log(`[transcribe] OK: ${text.length} chars in ${Date.now() - startMs}ms`);
-    
-    return res.json({
-  text,
-  latencyMs: Date.now() - startMs,
+
+    return res.json({ text, latencyMs: Date.now() - startMs });
+
+  } catch (err) {
+    console.error('[transcribe] Exception:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
