@@ -12,7 +12,12 @@ const upload = multer({
 router.post('/', upload.single('audio'), async (req, res) => {
   const apiKey = req.headers['x-groq-api-key'];
   if (!apiKey) return res.status(401).json({ error: 'Missing x-groq-api-key header' });
+
+
   if (!req.file) return res.status(400).json({ error: 'No audio file uploaded' });
+
+// ADD THIS LINE:
+  console.log('[transcribe] received:', req.file.buffer.length, 'bytes', req.file.mimetype);
 
   if (!req.file.buffer || req.file.buffer.length < 100) {
     return res.status(400).json({ error: 'Audio chunk too small.' });
@@ -23,7 +28,7 @@ router.post('/', upload.single('audio'), async (req, res) => {
   const startMs = Date.now();
 
   try {
-    const BlobImpl = globalThis.Blob ?? BufferBlob;
+    const BlobImpl = globalThis.Blob ?? BufferBlob 
     const buf = req.file.buffer;
     const rawMime = req.file.mimetype || 'audio/webm';
     const mime = rawMime.includes('ogg') ? 'audio/ogg' : 'audio/webm';
