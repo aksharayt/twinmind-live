@@ -599,15 +599,15 @@ async function startRec() {
     S.mr.onerror = e => { toast(`Microphone error: ${e.error?.message || 'Unknown'}`, true); stopRec(); };
     S.mr.start(250);
 
-    let headerBlob = null;
+    let lastSentCount = 0;
+
     S.audioFlushTimer = setInterval(() => {
-      if (S.audioParts.length === 0) return;
-      if (!headerBlob) headerBlob = S.audioParts[0];
-      const newParts = S.audioParts.slice(1);
-      if (newParts.length === 0) return;
-      const toSend = new Blob([headerBlob, ...newParts], { type: S.recMime });
-      S.audioParts = [headerBlob];
-      if (toSend.size >= 5_000) enqueueTranscribe(toSend);
+      if (S.audioParts.length <= lastSentCount) return;
+      const toSend = new Blob(S.audioParts, { type: S.recMime });
+      if (toSend.size >= 5_000) {
+        lastSentCount = S.audioParts.length;
+        enqueueTranscribe(toSend);
+      }
     }, 8000);
 
     S.rec = true;
@@ -644,14 +644,14 @@ function stopRec() {
     try { S.mr.stop(); } catch {}
     try { S.mr.stream?.getTracks().forEach(t => t.stop()); } catch {}
   }
+
   setTimeout(() => {
-    if (S.audioParts.length > 1) {
-      const header = S.audioParts[0];
-      const rest = S.audioParts.slice(1);
-      const merged = new Blob([header, ...rest], { type: S.recMime || 'audio/webm' });
+    if (S.audioParts.length > 0) {
+      const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
       if (merged.size >= 1000) enqueueTranscribe(merged);
     }
   }, 400);
+
   clearRecTimers();
   S.rec = false;
   setRecUI(false);
@@ -690,11 +690,19 @@ async function doTranscribe(blob) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { toast(`Transcription error: ${data.error || res.statusText}`, true); return; }
+
     const text = (data.text || '').trim();
     if (!text) return;
     lat('tx', Date.now() - t0);
-    addChunk(text);
-    void fetchSug();
+
+  // Extract only new words not yet shown
+    const allShown = S.tx.map(c => c.text).join(' ').trim();
+    const newText = allShown ? extractNewContent(text, allShown) : text;
+    if (newText) {
+      addChunk(newText);
+      void fetchSug();
+    }
+
   } catch (e) {
     toast(`Network error: ${e.message}`, true);
   }
@@ -710,6 +718,25 @@ function addChunk(text) {
   d.innerHTML = `<div class="tx-time">${fmt(S.tx.at(-1).ts)}</div><div class="tx-text">${esc(text)}</div>`;
   G('txChunks').appendChild(d);
   G('txScroll').scrollTop = G('txScroll').scrollHeight;
+}
+
+function extractNewContent(incoming, alreadyShown) {
+  const norm = s => s.trim().replace(/\s+/g, ' ');
+  const inc = norm(incoming);
+  const shown = norm(alreadyShown);
+  if (inc === shown) return '';
+  if (inc.startsWith(shown)) return inc.slice(shown.length).trim();
+  // Word-level overlap: find longest suffix of shown that matches prefix of inc
+  const shownWords = shown.split(' ');
+  const incWords = inc.split(' ');
+  let overlap = 0;
+  const maxCheck = Math.min(shownWords.length, incWords.length, 60);
+  for (let len = maxCheck; len > 3; len--) {
+    const tail = shownWords.slice(-len).join(' ').toLowerCase();
+    const head = incWords.slice(0, len).join(' ').toLowerCase();
+    if (tail === head) { overlap = len; break; }
+  }
+  return incWords.slice(overlap).join(' ').trim();
 }
 
 function startCycle() {
