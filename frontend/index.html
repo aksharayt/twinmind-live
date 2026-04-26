@@ -1229,6 +1229,7 @@ async function startRec() {
     S.mr.start(250);
 
     let lastSentIndex = 0;
+    
     S.audioFlushTimer = setInterval(() => {
       if (S.audioParts.length <= lastSentIndex) return;
       // Send ALL parts from start — WebM needs the header from index 0
