@@ -8,19 +8,15 @@ function buildMessages(body) {
   const {
     message,
     transcriptContext = '',
-    chatHistory = [],
-    isExpansion = false,
+    chatHistory       = [],
+    isExpansion       = false,
     systemPrompt,
   } = body;
 
-  const basePrompt = systemPrompt ?? (isExpansion ? DETAIL_ANSWER_PROMPT : CHAT_SYSTEM_PROMPT);
-  const systemContent = `${basePrompt}
+  const basePrompt    = systemPrompt ?? (isExpansion ? DETAIL_ANSWER_PROMPT : CHAT_SYSTEM_PROMPT);
+  const systemContent = `${basePrompt}\n\nCONVERSATION TRANSCRIPT:\n${String(transcriptContext).trim() || '(No transcript captured yet)'}`;
 
-CONVERSATION TRANSCRIPT:
-${String(transcriptContext).trim() || '(No transcript captured yet)'}`;
-
-  const history = Array.isArray(chatHistory) ? chatHistory : [];
-  const safeHistory = history
+  const safeHistory = (Array.isArray(chatHistory) ? chatHistory : [])
     .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
     .slice(-20)
     .map(m => ({ role: m.role, content: m.content }));
@@ -35,13 +31,12 @@ ${String(transcriptContext).trim() || '(No transcript captured yet)'}`;
 function resolveChatParams(body) {
   const { model, temperature, maxTokens } = body;
   return {
-    model:       model ?? DEFAULT_SETTINGS.model,
+    model:       model       ?? DEFAULT_SETTINGS.model,
     temperature: typeof temperature === 'number' && Number.isFinite(temperature) ? temperature : DEFAULT_SETTINGS.chatTemperature,
-    maxTokens:   typeof maxTokens === 'number' && Number.isFinite(maxTokens) ? maxTokens : DEFAULT_SETTINGS.maxChatTokens,
+    maxTokens:   typeof maxTokens   === 'number' && Number.isFinite(maxTokens)   ? maxTokens   : DEFAULT_SETTINGS.maxChatTokens,
   };
 }
 
-/** Non-streaming fallback (reliable through proxies). */
 router.post('/complete', async (req, res) => {
   const apiKey = req.headers['x-groq-api-key'];
   if (!apiKey) return res.status(401).json({ error: 'Missing x-groq-api-key header' });
@@ -53,12 +48,12 @@ router.post('/complete', async (req, res) => {
   const messages = buildMessages(req.body);
 
   try {
-    const groq = getGroqClient(apiKey);
+    const groq       = getGroqClient(apiKey);
     const completion = await groq.chat.completions.create({
       model,
       temperature,
       max_tokens: maxTokens,
-      stream: false,
+      stream:     false,
       messages,
     });
     const text = completion.choices?.[0]?.message?.content ?? '';
@@ -79,19 +74,19 @@ router.post('/stream', async (req, res) => {
   const { model, temperature, maxTokens } = resolveChatParams(req.body);
   const messages = buildMessages(req.body);
 
-  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no');
+  res.setHeader('Content-Type',     'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control',    'no-cache, no-transform');
+  res.setHeader('Connection',       'keep-alive');
+  res.setHeader('X-Accel-Buffering','no');
   res.flushHeaders();
 
   try {
-    const groq = getGroqClient(apiKey);
+    const groq   = getGroqClient(apiKey);
     const stream = await groq.chat.completions.create({
       model,
       temperature,
       max_tokens: maxTokens,
-      stream: true,
+      stream:     true,
       messages,
     });
 
