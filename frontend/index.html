@@ -1181,8 +1181,32 @@ async function startRec() {
 
   try {
     clearRecTimers();
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // Reset all session state for a fresh recording
+    S.tx = [];
+    S.batches = [];
+    S.chat = [];
+    S.lastTxText = '';
+    S.txQueue = [];
+    S.txInFlight = false;
+    S.audioParts = [];
+    S_currentSummary = null;
 
+// Clear UI
+    G('txChunks').innerHTML = '';
+    if (!G('txEmpty')) {
+      const e = document.createElement('p');
+      e.className = 'col-empty';
+      e.id = 'txEmpty';
+      e.textContent = 'No transcript yet — start the mic.';
+      G('txScroll').insertBefore(e, G('txChunks'));
+    }
+    G('sugFeed').innerHTML = '<p class="col-empty">Suggestions appear here once recording starts.</p>';
+    G('chatThread').innerHTML = '<p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>';
+    G('bBadge').textContent = '0 Batches';
+    G('btnViewSum').style.display = 'none';
+    [G('lTx'), G('lSg'), G('lCh')].forEach(el => { el.className = 'lpill'; el.textContent = ''; });
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const mimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
     const mime = mimes.find(m => MediaRecorder.isTypeSupported(m)) || '';
 
@@ -1204,10 +1228,16 @@ async function startRec() {
 
     S.mr.start(250);
 
+    let lastSentIndex = 0;
     S.audioFlushTimer = setInterval(() => {
-      if (!S.audioParts.length) return;
+      if (S.audioParts.length <= lastSentIndex) return;
+      // Send ALL parts from start — WebM needs the header from index 0
+     
       const merged = new Blob(S.audioParts, { type: S.recMime });
-      if (merged.size >= 10_000) enqueueTranscribe(merged);
+      if (merged.size >= 10_000) {
+        lastSentIndex = S.audioParts.length;
+        enqueueTranscribe(merged);
+      }
     }, 8000);
 
     S.rec = true;
@@ -1319,19 +1349,35 @@ async function doTranscribe(blob) {
 }
 
 function extractNewText(incoming, previous) {
-  if (!previous) return incoming;
-  // Find the longest suffix of previous that is a prefix of incoming
-  const prevWords = previous.split(' ');
-  const inWords = incoming.split(' ');
-  let overlapLen = 0;
-  for (let len = Math.min(prevWords.length, inWords.length); len > 0; len--) {
-    const prevSuffix = prevWords.slice(-len).join(' ').toLowerCase();
-    const inPrefix = inWords.slice(0, len).join(' ').toLowerCase();
-    if (prevSuffix === inPrefix) { overlapLen = len; break; }
+  if (!previous) return incoming.trim();
+  if (incoming === previous) return '';
+
+  // Normalize both strings
+  const norm = s => s.trim().replace(/\s+/g, ' ');
+  const inc = norm(incoming);
+  const prev = norm(previous);
+
+  // If incoming starts with previous, return only the new suffix
+  if (inc.startsWith(prev)) {
+    return inc.slice(prev.length).trim();
   }
-  const newWords = inWords.slice(overlapLen);
+
+  // Find longest word-level overlap between end of previous and start of incoming
+  const prevWords = prev.split(' ');
+  const incWords = inc.split(' ');
+  let best = 0;
+  const maxCheck = Math.min(prevWords.length, incWords.length, 40);
+  for (let len = maxCheck; len > 2; len--) {
+    const tail = prevWords.slice(-len).join(' ').toLowerCase();
+    const head = incWords.slice(0, len).join(' ').toLowerCase();
+    if (tail === head) { best = len; break; }
+  }
+
+  const newWords = incWords.slice(best);
   return newWords.join(' ').trim();
 }
+
+
 
 function addChunk(text) {
   if (!text) return;
