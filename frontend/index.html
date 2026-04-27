@@ -1564,7 +1564,6 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       S.tx = []; S.batches = []; S.chat = [];
       S.txQueue = []; S.txInFlight = false;
       S.audioParts = [];
-      S.lastWhisperText = '';
       S_currentSummary = null;
       G('txChunks').innerHTML = '';
       if (!G('txEmpty')) {
@@ -1598,12 +1597,14 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         S.mr.start(250);
 
         let lastSentCount = 0;
+        let sentBlobForCount = 0;
 
         S.audioFlushTimer = setInterval(() => {
-          if (S.audioParts.length <= lastSentCount) return;
+          const total = S.audioParts.length;
+          if (total <= sentBlobForCount) return;
           const toSend = new Blob(S.audioParts, { type: S.recMime });
           if (toSend.size >= 5_000) {
-            lastSentCount = S.audioParts.length;
+            sentBlobForCount = total;
             enqueueTranscribe(toSend);
           }
         }, 8000);
@@ -1693,10 +1694,32 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         if (!text) return;
         lat('tx', Date.now() - t0);
 
-        const newText = extractNewContent(text, S.lastWhisperText);
-        S.lastWhisperText = text;
-        if (newText) {
-          addChunk(newText);
+        // Only show text that hasn't been shown yet
+        const already = S.tx.map(c => c.text).join(' ');
+        const norm = s => s.replace(/\s+/g, ' ').trim();
+        const normText = norm(text);
+        const normAlready = norm(already);
+
+        let toShow = '';
+        if (!normAlready) {
+          toShow = normText;
+        } else if (normText.startsWith(normAlready)) {
+          toShow = normText.slice(normAlready.length).trim();
+        } else {
+          // Whisper rewrote — find word-level new suffix
+          const aWords = normAlready.split(' ');
+          const tWords = normText.split(' ');
+          let overlap = 0;
+          for (let len = Math.min(aWords.length, tWords.length, 80); len > 5; len--) {
+            if (aWords.slice(-len).join(' ').toLowerCase() === tWords.slice(0, len).join(' ').toLowerCase()) {
+              overlap = len; break;
+            }
+          }
+          toShow = tWords.slice(overlap).join(' ').trim();
+        }
+
+        if (toShow) {
+          addChunk(toShow);
           void fetchSug();
         }
 
