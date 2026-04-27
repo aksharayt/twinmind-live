@@ -1452,7 +1452,6 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       cfg: loadCfg(),
       tR: null, tC: null, sl: 0,
       sugLoading: false, txQueue: [], txInFlight: false,
-      lastWhisperText: '',
     };
 
     let S_currentSummary = null;
@@ -1575,7 +1574,7 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       G('sugFeed').innerHTML = '<p class="col-empty">Suggestions appear here once recording starts.</p>';
       G('chatThread').innerHTML = '<p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>';
       G('bBadge').textContent = '0 Batches';
-      G('btnViewSum').style.display = 'none';
+      if (!loadSummaries().length) G('btnViewSum').style.display = 'none';
       ['lTx', 'lSg', 'lCh'].forEach(id => { const el = G(id); if (el) { el.className = 'lpill'; el.textContent = ''; } });
     }
 
@@ -1596,15 +1595,20 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         S.mr.onerror = e => { toast(`Microphone error: ${e.error?.message || 'Unknown'}`, true); stopRec(); };
         S.mr.start(250);
 
-        let lastSentCount = 0;
-        let sentBlobForCount = 0;
+        let lastSentIndex = 0;
 
         S.audioFlushTimer = setInterval(() => {
           const total = S.audioParts.length;
-          if (total <= sentBlobForCount) return;
-          const toSend = new Blob(S.audioParts, { type: S.recMime });
-          if (toSend.size >= 5_000) {
-            sentBlobForCount = total;
+          if (total <= lastSentIndex) return;
+
+          // Always include part 0 (WebM header) + new parts since last send
+          const headerParts = S.audioParts.slice(0, 1);
+          const newParts = S.audioParts.slice(Math.max(1, lastSentIndex));
+          if (newParts.length === 0) return;
+
+          const toSend = new Blob([...headerParts, ...newParts], { type: S.recMime });
+          if (toSend.size >= 3_000) {
+            lastSentIndex = total;
             enqueueTranscribe(toSend);
           }
         }, 8000);
@@ -1645,9 +1649,13 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       }
 
       setTimeout(() => {
-        if (S.audioParts.length > 0) {
-          const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
-          if (merged.size >= 1000) enqueueTranscribe(merged);
+        if (S.audioParts.length > 1) {
+          const headerParts = S.audioParts.slice(0, 1);
+          const newParts = S.audioParts.slice(lastSentIndex > 0 ? lastSentIndex : 1);
+          if (newParts.length > 0) {
+            const merged = new Blob([...headerParts, ...newParts], { type: S.recMime || 'audio/webm' });
+            if (merged.size >= 1000) enqueueTranscribe(merged);
+          }
         }
       }, 400);
 
@@ -1689,40 +1697,11 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { toast(`Transcription error: ${data.error || res.statusText}`, true); return; }
-
         const text = (data.text || '').trim();
         if (!text) return;
         lat('tx', Date.now() - t0);
-
-        // Only show text that hasn't been shown yet
-        const already = S.tx.map(c => c.text).join(' ');
-        const norm = s => s.replace(/\s+/g, ' ').trim();
-        const normText = norm(text);
-        const normAlready = norm(already);
-
-        let toShow = '';
-        if (!normAlready) {
-          toShow = normText;
-        } else if (normText.startsWith(normAlready)) {
-          toShow = normText.slice(normAlready.length).trim();
-        } else {
-          // Whisper rewrote — find word-level new suffix
-          const aWords = normAlready.split(' ');
-          const tWords = normText.split(' ');
-          let overlap = 0;
-          for (let len = Math.min(aWords.length, tWords.length, 80); len > 5; len--) {
-            if (aWords.slice(-len).join(' ').toLowerCase() === tWords.slice(0, len).join(' ').toLowerCase()) {
-              overlap = len; break;
-            }
-          }
-          toShow = tWords.slice(overlap).join(' ').trim();
-        }
-
-        if (toShow) {
-          addChunk(toShow);
-          void fetchSug();
-        }
-
+        addChunk(text);
+        void fetchSug();
       } catch (e) {
         toast(`Network error: ${e.message}`, true);
       }
@@ -1740,24 +1719,24 @@ Lead with the direct answer then explain. Reference exact phrases from transcrip
       G('txScroll').scrollTop = G('txScroll').scrollHeight;
     }
 
-    function extractNewContent(incoming, alreadyShown) {
-      const norm = s => s.trim().replace(/\s+/g, ' ');
-      const inc = norm(incoming);
-      const shown = norm(alreadyShown);
-      if (inc === shown) return '';
-      if (inc.startsWith(shown)) return inc.slice(shown.length).trim();
-      // Word-level overlap: find longest suffix of shown that matches prefix of inc
-      const shownWords = shown.split(' ');
-      const incWords = inc.split(' ');
-      let overlap = 0;
-      const maxCheck = Math.min(shownWords.length, incWords.length, 60);
-      for (let len = maxCheck; len > 3; len--) {
-        const tail = shownWords.slice(-len).join(' ').toLowerCase();
-        const head = incWords.slice(0, len).join(' ').toLowerCase();
-        if (tail === head) { overlap = len; break; }
-      }
-      return incWords.slice(overlap).join(' ').trim();
-    }
+    // function extractNewContent(incoming, alreadyShown) {
+    //   const norm = s => s.trim().replace(/\s+/g, ' ');
+    //   const inc = norm(incoming);
+    //   const shown = norm(alreadyShown);
+    //   if (inc === shown) return '';
+    //   if (inc.startsWith(shown)) return inc.slice(shown.length).trim();
+    //   // Word-level overlap: find longest suffix of shown that matches prefix of inc
+    //   const shownWords = shown.split(' ');
+    //   const incWords = inc.split(' ');
+    //   let overlap = 0;
+    //   const maxCheck = Math.min(shownWords.length, incWords.length, 60);
+    //   for (let len = maxCheck; len > 3; len--) {
+    //     const tail = shownWords.slice(-len).join(' ').toLowerCase();
+    //     const head = incWords.slice(0, len).join(' ').toLowerCase();
+    //     if (tail === head) { overlap = len; break; }
+    //   }
+    //   return incWords.slice(overlap).join(' ').trim();
+    // }
 
     function startCycle() {
       S.sl = S.cfg.refreshSec;
