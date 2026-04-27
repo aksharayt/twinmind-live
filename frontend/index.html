@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
@@ -40,346 +41,1341 @@
       --r6: 6px;
       --r8: 8px;
       --r12: 12px;
-      --xs: 0 1px 2px rgba(0,0,0,.05);
-      --md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.05);
-      --lg: 0 10px 25px rgba(0,0,0,.1), 0 4px 10px rgba(0,0,0,.06);
+      --xs: 0 1px 2px rgba(0, 0, 0, .05);
+      --md: 0 4px 6px rgba(0, 0, 0, .07), 0 2px 4px rgba(0, 0, 0, .05);
+      --lg: 0 10px 25px rgba(0, 0, 0, .1), 0 4px 10px rgba(0, 0, 0, .06);
       --t: 140ms ease;
     }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
-    html, body {
-      height: 100%; background: var(--bg); color: var(--text-b);
-      font-family: var(--font); font-size: 14px; line-height: 1.5;
-      overflow: hidden; -webkit-font-smoothing: antialiased;
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
     }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-b);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
     .topbar {
-      height: 56px; background: var(--white); border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 16px 0 20px; position: relative; z-index: 40; flex-shrink: 0; box-shadow: var(--xs);
+      height: 56px;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 0 20px;
+      position: relative;
+      z-index: 40;
+      flex-shrink: 0;
+      box-shadow: var(--xs);
     }
-    .tm-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; user-select: none; }
-    .tm-icon { width: 34px; height: 34px; background: var(--navy); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .tm-words { display: flex; flex-direction: column; line-height: 1.1 }
-    .tm-words .w1 { font-size: 10px; color: var(--text-m); font-weight: 500; letter-spacing: .5px }
-    .tm-words .w2 { font-size: 16px; color: var(--navy); font-weight: 700; letter-spacing: -.4px }
-    .tb-center { display: flex; align-items: center; gap: 6px; position: absolute; left: 50%; transform: translateX(-50%); }
-    .spill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text-m); background: var(--bg); border: 1px solid var(--border); padding: 4px 12px; border-radius: 100px; transition: all var(--t); }
-    .sdot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-md); flex-shrink: 0; transition: background var(--t); }
-    .spill.live { color: var(--red); border-color: var(--red-b); background: var(--red-l) }
-    .spill.live .sdot { background: var(--red); animation: pdot 1.5s ease-in-out infinite }
-    @keyframes pdot { 0%, 100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.6); opacity: .5 } }
-    .lpill { display: none; font-size: 11px; font-weight: 500; color: var(--text-f); background: var(--bg); border: 1px solid var(--border); padding: 3px 10px; border-radius: 100px; font-variant-numeric: tabular-nums; transition: all var(--t); }
-    .lpill.show { display: inline-flex }
-    .lpill.fast { color: var(--green); background: var(--green-l); border-color: var(--green-b) }
-    .lpill.slow { color: var(--amber); background: var(--amber-l); border-color: var(--amber-b) }
-    .tb-right { display: flex; align-items: center; gap: 6px }
-    .btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font); font-size: 13px; font-weight: 500; border-radius: var(--r6); cursor: pointer; outline: none; border: none; transition: all var(--t); white-space: nowrap; line-height: 1; padding: 7px 14px; }
-    .btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px }
-    .btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none }
-    .btn-out { background: var(--white); border: 1px solid var(--border-md); color: var(--text-b) }
-    .btn-out:hover { background: var(--bg); border-color: var(--blue); color: var(--blue) }
-    .btn-blue { background: var(--blue); color: #fff; font-weight: 600 }
-    .btn-blue:hover { background: var(--blue-h) }
-    .btn-send { background: var(--blue); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: var(--r6); border: none; cursor: pointer; font-family: var(--font); transition: all var(--t); flex-shrink: 0; }
-    .btn-send:hover:not(:disabled) { background: var(--blue-h) }
-    .btn-send:disabled { opacity: .4; cursor: not-allowed }
-    .btn-refresh { display: inline-flex; align-items: center; gap: 7px; background: var(--white); border: 1px solid var(--border-md); color: var(--text-b); font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: var(--r6); cursor: pointer; font-family: var(--font); transition: all var(--t); }
-    .btn-refresh:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); background: var(--blue-l) }
-    .btn-refresh:disabled { opacity: .4; cursor: not-allowed }
-    .spnico { display: inline-block; font-size: 15px; line-height: 1 }
-    .spnico.go { animation: spin .8s linear infinite }
-    @keyframes spin { to { transform: rotate(360deg) } }
-    .mic-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--blue); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; box-shadow: 0 4px 12px rgba(26,86,219,.3); flex-shrink: 0; }
-    .mic-btn:hover { transform: scale(1.07); box-shadow: 0 6px 18px rgba(26,86,219,.4) }
-    .mic-btn.rec { background: var(--red); box-shadow: 0 4px 12px rgba(220,38,38,.3); animation: mbeat 1.8s ease-in-out infinite; }
-    .mic-btn.rec:hover { box-shadow: 0 0 0 12px rgba(220,38,38,.12) }
-    @keyframes mbeat { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,.4), 0 4px 12px rgba(220,38,38,.3) } 50% { box-shadow: 0 0 0 12px rgba(220,38,38,0), 0 4px 12px rgba(220,38,38,.3) } }
-    .workspace { display: grid; grid-template-columns: 1fr 1fr 1fr; height: calc(100vh - 56px); overflow: hidden; }
-    .col { display: flex; flex-direction: column; background: var(--white); border-right: 1px solid var(--border); overflow: hidden; min-height: 0; }
-    .col:last-child { border-right: none; background: var(--bg) }
-    .col-head { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: var(--white); }
-    .col-lbl { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--text-m) }
-    .col-meta { font-size: 11px; font-weight: 600; color: var(--text-f); letter-spacing: .3px }
-    .mic-area { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
-    .mic-lbl { font-size: 12px; color: var(--text-m); text-align: center; line-height: 1.55 }
-    .tx-scroll { flex: 1; overflow-y: auto; padding: 14px 18px; min-height: 0 }
-    .col-empty { text-align: center; color: var(--text-f); font-size: 13px; margin-top: 32px; line-height: 1.8 }
-    .tx-chunk { padding: 12px 0; border-bottom: 1px solid var(--border); animation: fin .22s ease; }
-    .tx-chunk:last-child { border-bottom: none }
-    @keyframes fin { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: translateY(0) } }
-    .tx-time { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 4px }
-    .tx-text { font-size: 13.5px; color: var(--text-b); line-height: 1.75 }
-    .sug-toolbar { padding: 10px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: var(--white); }
-    .cd-txt { font-size: 11.5px; color: var(--text-f); font-variant-numeric: tabular-nums }
-    .sug-feed { flex: 1; overflow-y: auto; padding: 14px 18px; min-height: 0; display: flex; flex-direction: column; }
-    .batch-grp { margin-bottom: 20px }
-    .sug-msg { font-size: 12.5px; line-height: 1.5; border: 1px solid var(--border); border-radius: var(--r8); background: var(--bg); color: var(--text-m); padding: 10px 12px; margin-bottom: 12px; }
-    .sug-msg.err { border-color: var(--red-b); background: var(--red-l); color: #991b1b }
-    .batch-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px }
-    .batch-ts { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap }
-    .batch-hr { flex: 1; height: 1px; background: var(--border) }
-    .b-new .batch-ts { color: var(--blue) }
-    .b-new .batch-hr { background: linear-gradient(to right, var(--blue-b), transparent) }
-    .b-old .batch-ts { color: var(--text-f) }
-    .b-old .sc { opacity: .5 }
-    .b-old .sc:hover { opacity: 1 }
-    .sc { background: var(--white); border: 1px solid var(--border); border-radius: var(--r8); padding: 12px 14px; cursor: pointer; margin-bottom: 8px; transition: all var(--t); position: relative; overflow: hidden; box-shadow: var(--xs); }
-    .sc::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ca, var(--blue)); border-radius: 3px 0 0 3px; }
-    .sc:hover { border-color: var(--ca, var(--blue)); box-shadow: var(--md); transform: translateY(-1px) }
-    .sc:active { transform: translateY(0); box-shadow: var(--xs) }
-    .sc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px }
-    .sc-badge { font-size: 9.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; border: 1px solid; }
-    .sc-conf { font-size: 9px; font-weight: 600; color: var(--text-f); background: var(--bg); border: 1px solid var(--border); padding: 1px 7px; border-radius: 100px; }
-    .sc-title { font-size: 13px; font-weight: 600; color: var(--text-h); line-height: 1.4; margin-bottom: 4px }
-    .sc-prev { font-size: 12.5px; color: var(--text-b); line-height: 1.65 }
-    .sc-quote { margin-top: 8px; padding: 5px 9px; background: var(--bg); border-left: 2px solid var(--border-md); border-radius: 0 4px 4px 0; font-size: 11px; color: var(--text-m); font-style: italic; line-height: 1.5; }
-    .sk-wrap { margin-bottom: 20px }
-    .sk-h { height: 10px; width: 80px; border-radius: 100px; margin-bottom: 10px }
-    .sk-c { height: 84px; border-radius: var(--r8); margin-bottom: 8px }
-    .sk-h, .sk-c { background-image: linear-gradient(90deg, var(--border) 0%, #f3f4f6 50%, var(--border) 100%); background-size: 200% 100%; animation: shim 1.3s infinite; }
-    .sk-c:nth-child(3) { animation-delay: .08s }
-    .sk-c:nth-child(4) { animation-delay: .16s }
-    @keyframes shim { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
-    .chat-thread { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
-    .cm { display: flex; flex-direction: column; gap: 4px; animation: fin .2s ease }
-    .cm-role { font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase }
-    .cm.user .cm-role { color: var(--blue) }
-    .cm.assistant .cm-role { color: var(--teal) }
-    .cm-body { font-size: 13.5px; line-height: 1.75; color: var(--text-b); background: var(--white); padding: 11px 14px; border-radius: var(--r8); border: 1px solid var(--border); box-shadow: var(--xs); }
-    .cm.user .cm-body { background: var(--blue-l); border-color: var(--blue-b); color: #1e3a6b }
-    .chat-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; background: var(--white); }
-    .chat-inp { flex: 1; background: var(--bg); border: 1px solid var(--border-md); border-radius: var(--r8); color: var(--text-b); font-family: var(--font); font-size: 13px; padding: 9px 14px; resize: none; max-height: 110px; line-height: 1.55; outline: none; transition: border-color var(--t), background var(--t); }
-    .chat-inp:focus { border-color: var(--focus); background: var(--white) }
-    .chat-inp::placeholder { color: var(--text-f) }
-    .overlay { position: fixed; inset: 0; background: rgba(17,24,39,.45); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(3px); transition: opacity .18s; }
-    .overlay.hidden { opacity: 0; pointer-events: none }
-    .modal { background: var(--white); border: 1px solid var(--border); border-radius: var(--r12); width: 680px; max-width: calc(100vw - 32px); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--lg); }
-    .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .modal-title { font-size: 16px; font-weight: 700; color: var(--text-h) }
-    .modal-x { background: none; border: none; color: var(--text-f); font-size: 18px; cursor: pointer; padding: 4px; line-height: 1; transition: color var(--t); border-radius: 4px; }
-    .modal-x:hover { color: var(--text-h); background: var(--bg) }
-    .modal-body { padding: 18px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1; }
-    .api-note { padding: 10px 13px; background: var(--blue-l); border: 1px solid var(--blue-b); border-radius: var(--r6); font-size: 12px; color: #1e40af; line-height: 1.6; }
-    .api-note a { color: var(--blue); font-weight: 600 }
-    .sect-title { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-m); padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-top: 4px; }
-    .fld { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-m) }
-    .fld-desc { font-size: 10.5px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-f); margin-top: 1px }
-    .fld-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
-    .fld-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px }
-    .fld-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px }
-    .fld input, .fld textarea { background: var(--bg); border: 1px solid var(--border-md); border-radius: var(--r6); color: var(--text-b); font-family: var(--font); font-size: 13px; padding: 8px 12px; outline: none; width: 100%; transition: border-color var(--t), background var(--t); }
-    .fld input:focus, .fld textarea:focus { border-color: var(--focus); background: var(--white) }
-    .fld textarea { resize: vertical; line-height: 1.6; font-size: 12px }
-    .modal-foot { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg); }
-    .modal-note { font-size: 11.5px; color: var(--text-f) }
-    .modal-btns { display: flex; gap: 8px }
-    ::-webkit-scrollbar { width: 4px }
-    ::-webkit-scrollbar-track { background: transparent }
-    ::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 4px }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-f) }
-    .toast-dock { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; }
-    .toast { background: var(--text-h); color: #fff; font-size: 12.5px; font-weight: 500; padding: 9px 18px; border-radius: var(--r8); box-shadow: var(--lg); animation: tin .18s ease; }
-    .toast.err { background: var(--red) }
-    @keyframes tin { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
-    .sum-section { padding: 16px 22px; border-bottom: 1px solid var(--border) }
-    .sum-section:last-child { border-bottom: none }
-    .sum-section-title { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-m); margin-bottom: 10px; }
-    .sum-para { font-size: 13.5px; line-height: 1.75; color: var(--text-b) }
-    .sum-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
-    .sum-item:last-child { border-bottom: none }
-    .sum-item-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); flex-shrink: 0; margin-top: 5px; }
-    .sum-item-dot.green { background: var(--green) }
-    .sum-item-dot.amber { background: var(--amber) }
-    .sum-item-text { font-size: 13px; line-height: 1.6; color: var(--text-b) }
-    .sum-item-owner { display: inline-block; font-size: 11px; font-weight: 600; color: var(--blue); background: var(--blue-l); border: 1px solid var(--blue-b); padding: 1px 8px; border-radius: 100px; margin-right: 6px; }
-    .sum-meta { font-size: 11px; color: var(--text-f); padding: 10px 22px; border-bottom: 1px solid var(--border); display: flex; gap: 20px; flex-wrap: wrap; }
-    .sum-title-row { padding: 14px 22px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-    .sum-title-inp { flex: 1; background: var(--bg); border: 1px solid var(--border-md); border-radius: var(--r6); color: var(--text-h); font-family: var(--font); font-size: 15px; font-weight: 600; padding: 7px 12px; outline: none; transition: border-color var(--t); }
-    .sum-title-inp:focus { border-color: var(--focus); background: var(--white) }
-    .sum-list-item { display: flex; align-items: center; padding: 12px 22px; border-bottom: 1px solid var(--border); transition: background var(--t); }
-    .sum-list-item:hover { background: var(--bg) }
-    .sum-list-item:last-child { border-bottom: none }
-    .sum-list-title { font-size: 14px; font-weight: 600; color: var(--text-h) }
-    .sum-list-meta { font-size: 11px; color: var(--text-f); margin-top: 2px }
-    .sum-list-arrow { color: var(--text-f); font-size: 16px; margin-left: auto; padding-left: 12px; }
-    .sum-del-btn { background: none; border: 1px solid var(--border-md); border-radius: var(--r6); color: var(--text-f); font-size: 12px; cursor: pointer; padding: 4px 8px; line-height: 1; transition: all var(--t); flex-shrink: 0; margin-left: 10px; }
-    .sum-del-btn:hover { background: var(--red-l); border-color: var(--red-b); color: var(--red); }
+
+    .tm-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .tm-icon {
+      width: 34px;
+      height: 34px;
+      background: var(--navy);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tm-words {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1
+    }
+
+    .tm-words .w1 {
+      font-size: 10px;
+      color: var(--text-m);
+      font-weight: 500;
+      letter-spacing: .5px
+    }
+
+    .tm-words .w2 {
+      font-size: 16px;
+      color: var(--navy);
+      font-weight: 700;
+      letter-spacing: -.4px
+    }
+
+    .tb-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .spill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-m);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 100px;
+      transition: all var(--t);
+    }
+
+    .sdot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border-md);
+      flex-shrink: 0;
+      transition: background var(--t);
+    }
+
+    .spill.live {
+      color: var(--red);
+      border-color: var(--red-b);
+      background: var(--red-l)
+    }
+
+    .spill.live .sdot {
+      background: var(--red);
+      animation: pdot 1.5s ease-in-out infinite
+    }
+
+    @keyframes pdot {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+
+      50% {
+        transform: scale(1.6);
+        opacity: .5
+      }
+    }
+
+    .lpill {
+      display: none;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-f);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-variant-numeric: tabular-nums;
+      transition: all var(--t);
+    }
+
+    .lpill.show {
+      display: inline-flex
+    }
+
+    .lpill.fast {
+      color: var(--green);
+      background: var(--green-l);
+      border-color: var(--green-b)
+    }
+
+    .lpill.slow {
+      color: var(--amber);
+      background: var(--amber-l);
+      border-color: var(--amber-b)
+    }
+
+    .tb-right {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--r6);
+      cursor: pointer;
+      outline: none;
+      border: none;
+      transition: all var(--t);
+      white-space: nowrap;
+      line-height: 1;
+      padding: 7px 14px;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      pointer-events: none
+    }
+
+    .btn-out {
+      background: var(--white);
+      border: 1px solid var(--border-md);
+      color: var(--text-b)
+    }
+
+    .btn-out:hover {
+      background: var(--bg);
+      border-color: var(--blue);
+      color: var(--blue)
+    }
+
+    .btn-blue {
+      background: var(--blue);
+      color: #fff;
+      font-weight: 600
+    }
+
+    .btn-blue:hover {
+      background: var(--blue-h)
+    }
+
+    .btn-send {
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: var(--r6);
+      border: none;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all var(--t);
+      flex-shrink: 0;
+    }
+
+    .btn-send:hover:not(:disabled) {
+      background: var(--blue-h)
+    }
+
+    .btn-send:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    .btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--white);
+      border: 1px solid var(--border-md);
+      color: var(--text-b);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: var(--r6);
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all var(--t);
+    }
+
+    .btn-refresh:hover:not(:disabled) {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: var(--blue-l)
+    }
+
+    .btn-refresh:disabled {
+      opacity: .4;
+      cursor: not-allowed
+    }
+
+    .spnico {
+      display: inline-block;
+      font-size: 15px;
+      line-height: 1
+    }
+
+    .spnico.go {
+      animation: spin .8s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .mic-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      box-shadow: 0 4px 12px rgba(26, 86, 219, .3);
+      flex-shrink: 0;
+    }
+
+    .mic-btn:hover {
+      transform: scale(1.07);
+      box-shadow: 0 6px 18px rgba(26, 86, 219, .4)
+    }
+
+    .mic-btn.rec {
+      background: var(--red);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, .3);
+      animation: mbeat 1.8s ease-in-out infinite;
+    }
+
+    .mic-btn.rec:hover {
+      box-shadow: 0 0 0 12px rgba(220, 38, 38, .12)
+    }
+
+    @keyframes mbeat {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, .4), 0 4px 12px rgba(220, 38, 38, .3)
+      }
+
+      50% {
+        box-shadow: 0 0 0 12px rgba(220, 38, 38, 0), 0 4px 12px rgba(220, 38, 38, .3)
+      }
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      height: calc(100vh - 56px);
+      overflow: hidden;
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .col:last-child {
+      border-right: none;
+      background: var(--bg)
+    }
+
+    .col-head {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--white);
+    }
+
+    .col-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--text-m)
+    }
+
+    .col-meta {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-f);
+      letter-spacing: .3px
+    }
+
+    .mic-area {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .mic-lbl {
+      font-size: 12px;
+      color: var(--text-m);
+      text-align: center;
+      line-height: 1.55
+    }
+
+    .tx-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      min-height: 0
+    }
+
+    .col-empty {
+      text-align: center;
+      color: var(--text-f);
+      font-size: 13px;
+      margin-top: 32px;
+      line-height: 1.8
+    }
+
+    .tx-chunk {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fin .22s ease;
+    }
+
+    .tx-chunk:last-child {
+      border-bottom: none
+    }
+
+    @keyframes fin {
+      from {
+        opacity: 0;
+        transform: translateY(4px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .tx-text {
+      font-size: 13.5px;
+      color: var(--text-b);
+      line-height: 1.75
+    }
+
+    .sug-toolbar {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--white);
+    }
+
+    .cd-txt {
+      font-size: 11.5px;
+      color: var(--text-f);
+      font-variant-numeric: tabular-nums
+    }
+
+    .sug-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .batch-grp {
+      margin-bottom: 20px
+    }
+
+    .sug-msg {
+      font-size: 12.5px;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+      border-radius: var(--r8);
+      background: var(--bg);
+      color: var(--text-m);
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+
+    .sug-msg.err {
+      border-color: var(--red-b);
+      background: var(--red-l);
+      color: #991b1b
+    }
+
+    .batch-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px
+    }
+
+    .batch-ts {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap
+    }
+
+    .batch-hr {
+      flex: 1;
+      height: 1px;
+      background: var(--border)
+    }
+
+    .b-new .batch-ts {
+      color: var(--blue)
+    }
+
+    .b-new .batch-hr {
+      background: linear-gradient(to right, var(--blue-b), transparent)
+    }
+
+    .b-old .batch-ts {
+      color: var(--text-f)
+    }
+
+    .b-old .sc {
+      opacity: .5
+    }
+
+    .b-old .sc:hover {
+      opacity: 1
+    }
+
+    .sc {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r8);
+      padding: 12px 14px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all var(--t);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--xs);
+    }
+
+    .sc::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--ca, var(--blue));
+      border-radius: 3px 0 0 3px;
+    }
+
+    .sc:hover {
+      border-color: var(--ca, var(--blue));
+      box-shadow: var(--md);
+      transform: translateY(-1px)
+    }
+
+    .sc:active {
+      transform: translateY(0);
+      box-shadow: var(--xs)
+    }
+
+    .sc-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px
+    }
+
+    .sc-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 100px;
+      border: 1px solid;
+    }
+
+    .sc-conf {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-f);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 1px 7px;
+      border-radius: 100px;
+    }
+
+    .sc-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-h);
+      line-height: 1.4;
+      margin-bottom: 4px
+    }
+
+    .sc-prev {
+      font-size: 12.5px;
+      color: var(--text-b);
+      line-height: 1.65
+    }
+
+    .sc-quote {
+      margin-top: 8px;
+      padding: 5px 9px;
+      background: var(--bg);
+      border-left: 2px solid var(--border-md);
+      border-radius: 0 4px 4px 0;
+      font-size: 11px;
+      color: var(--text-m);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .sk-wrap {
+      margin-bottom: 20px
+    }
+
+    .sk-h {
+      height: 10px;
+      width: 80px;
+      border-radius: 100px;
+      margin-bottom: 10px
+    }
+
+    .sk-c {
+      height: 84px;
+      border-radius: var(--r8);
+      margin-bottom: 8px
+    }
+
+    .sk-h,
+    .sk-c {
+      background-image: linear-gradient(90deg, var(--border) 0%, #f3f4f6 50%, var(--border) 100%);
+      background-size: 200% 100%;
+      animation: shim 1.3s infinite;
+    }
+
+    .sk-c:nth-child(3) {
+      animation-delay: .08s
+    }
+
+    .sk-c:nth-child(4) {
+      animation-delay: .16s
+    }
+
+    @keyframes shim {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .chat-thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .cm {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: fin .2s ease
+    }
+
+    .cm-role {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase
+    }
+
+    .cm.user .cm-role {
+      color: var(--blue)
+    }
+
+    .cm.assistant .cm-role {
+      color: var(--teal)
+    }
+
+    .cm-body {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--text-b);
+      background: var(--white);
+      padding: 11px 14px;
+      border-radius: var(--r8);
+      border: 1px solid var(--border);
+      box-shadow: var(--xs);
+    }
+
+    .cm.user .cm-body {
+      background: var(--blue-l);
+      border-color: var(--blue-b);
+      color: #1e3a6b
+    }
+
+    .chat-foot {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-shrink: 0;
+      background: var(--white);
+    }
+
+    .chat-inp {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border-md);
+      border-radius: var(--r8);
+      color: var(--text-b);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 9px 14px;
+      resize: none;
+      max-height: 110px;
+      line-height: 1.55;
+      outline: none;
+      transition: border-color var(--t), background var(--t);
+    }
+
+    .chat-inp:focus {
+      border-color: var(--focus);
+      background: var(--white)
+    }
+
+    .chat-inp::placeholder {
+      color: var(--text-f)
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, .45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(3px);
+      transition: opacity .18s;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none
+    }
+
+    .modal {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r12);
+      width: 680px;
+      max-width: calc(100vw - 32px);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--lg);
+    }
+
+    .modal-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-h)
+    }
+
+    .modal-x {
+      background: none;
+      border: none;
+      color: var(--text-f);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      transition: color var(--t);
+      border-radius: 4px;
+    }
+
+    .modal-x:hover {
+      color: var(--text-h);
+      background: var(--bg)
+    }
+
+    .modal-body {
+      padding: 18px 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .api-note {
+      padding: 10px 13px;
+      background: var(--blue-l);
+      border: 1px solid var(--blue-b);
+      border-radius: var(--r6);
+      font-size: 12px;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+
+    .api-note a {
+      color: var(--blue);
+      font-weight: 600
+    }
+
+    .sect-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--text-m);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-top: 4px;
+    }
+
+    .fld {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      color: var(--text-m)
+    }
+
+    .fld-desc {
+      font-size: 10.5px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-f);
+      margin-top: 1px
+    }
+
+    .fld-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px
+    }
+
+    .fld-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px
+    }
+
+    .fld-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px
+    }
+
+    .fld input,
+    .fld textarea {
+      background: var(--bg);
+      border: 1px solid var(--border-md);
+      border-radius: var(--r6);
+      color: var(--text-b);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 8px 12px;
+      outline: none;
+      width: 100%;
+      transition: border-color var(--t), background var(--t);
+    }
+
+    .fld input:focus,
+    .fld textarea:focus {
+      border-color: var(--focus);
+      background: var(--white)
+    }
+
+    .fld textarea {
+      resize: vertical;
+      line-height: 1.6;
+      font-size: 12px
+    }
+
+    .modal-foot {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+    }
+
+    .modal-note {
+      font-size: 11.5px;
+      color: var(--text-f)
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 8px
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-md);
+      border-radius: 4px
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-f)
+    }
+
+    .toast-dock {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--text-h);
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 9px 18px;
+      border-radius: var(--r8);
+      box-shadow: var(--lg);
+      animation: tin .18s ease;
+    }
+
+    .toast.err {
+      background: var(--red)
+    }
+
+    @keyframes tin {
+      from {
+        opacity: 0;
+        transform: translateY(8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .sum-section {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .sum-section:last-child {
+      border-bottom: none
+    }
+
+    .sum-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--text-m);
+      margin-bottom: 10px;
+    }
+
+    .sum-para {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--text-b)
+    }
+
+    .sum-item {
+      display: flex;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    .sum-item:last-child {
+      border-bottom: none
+    }
+
+    .sum-item-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    .sum-item-dot.green {
+      background: var(--green)
+    }
+
+    .sum-item-dot.amber {
+      background: var(--amber)
+    }
+
+    .sum-item-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-b)
+    }
+
+    .sum-item-owner {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--blue);
+      background: var(--blue-l);
+      border: 1px solid var(--blue-b);
+      padding: 1px 8px;
+      border-radius: 100px;
+      margin-right: 6px;
+    }
+
+    .sum-meta {
+      font-size: 11px;
+      color: var(--text-f);
+      padding: 10px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .sum-title-row {
+      padding: 14px 22px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sum-title-inp {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border-md);
+      border-radius: var(--r6);
+      color: var(--text-h);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 600;
+      padding: 7px 12px;
+      outline: none;
+      transition: border-color var(--t);
+    }
+
+    .sum-title-inp:focus {
+      border-color: var(--focus);
+      background: var(--white)
+    }
+
+    .sum-list-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 22px;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--t);
+    }
+
+    .sum-list-item:hover {
+      background: var(--bg)
+    }
+
+    .sum-list-item:last-child {
+      border-bottom: none
+    }
+
+    .sum-list-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-h)
+    }
+
+    .sum-list-meta {
+      font-size: 11px;
+      color: var(--text-f);
+      margin-top: 2px
+    }
+
+    .sum-list-arrow {
+      color: var(--text-f);
+      font-size: 16px;
+      margin-left: auto;
+      padding-left: 12px;
+    }
+
+    .sum-del-btn {
+      background: none;
+      border: 1px solid var(--border-md);
+      border-radius: var(--r6);
+      color: var(--text-f);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+      transition: all var(--t);
+      flex-shrink: 0;
+      margin-left: 10px;
+    }
+
+    .sum-del-btn:hover {
+      background: var(--red-l);
+      border-color: var(--red-b);
+      color: var(--red);
+    }
+
+    .tx-time-inline {
+      font-size: 10px;
+      color: var(--text-f);
+      font-weight: 400;
+      margin-left: 6px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
+
 <body>
 
-<header class="topbar">
-  <a class="tm-logo" href="#" onclick="return false">
-    <div class="tm-icon">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <circle cx="9" cy="9" r="4" fill="white" opacity=".9"/>
-        <circle cx="15" cy="9" r="4" fill="white" opacity=".6"/>
-        <circle cx="9" cy="15" r="4" fill="white" opacity=".6"/>
-        <circle cx="15" cy="15" r="4" fill="white" opacity=".35"/>
-      </svg>
-    </div>
-    <div class="tm-words"><span class="w1">twin</span><span class="w2">mind</span></div>
-  </a>
-  <div class="tb-center">
-    <div class="spill" id="sPill"><span class="sdot"></span><span id="sTxt">IDLE</span></div>
-    <span class="lpill" id="lTx"></span>
-    <span class="lpill" id="lSg"></span>
-    <span class="lpill" id="lCh"></span>
-  </div>
-  <div class="tb-right">
-    <button class="btn btn-out" id="btnViewSum" style="display:none">View Summary</button>
-    <button class="btn btn-out" id="btnSet">Settings</button>
-    <button class="btn btn-out" id="btnExp">Export Session</button>
-  </div>
-</header>
-
-<main class="workspace">
-  <section class="col" aria-label="Mic and Transcript">
-    <div class="col-head">
-      <span class="col-lbl">1. Mic &amp; Transcript</span>
-      <span class="col-meta" id="recBadge">IDLE</span>
-    </div>
-    <div class="mic-area">
-      <button class="mic-btn" id="btnMic" aria-label="Start recording">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <rect x="9" y="2" width="6" height="11" rx="3" fill="white"/>
-          <path d="M5 11a7 7 0 0 0 14 0" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <header class="topbar">
+    <a class="tm-logo" href="#" onclick="return false">
+      <div class="tm-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <circle cx="9" cy="9" r="4" fill="white" opacity=".9" />
+          <circle cx="15" cy="9" r="4" fill="white" opacity=".6" />
+          <circle cx="9" cy="15" r="4" fill="white" opacity=".6" />
+          <circle cx="15" cy="15" r="4" fill="white" opacity=".35" />
         </svg>
-      </button>
-      <span class="mic-lbl" id="micLbl">
-        Click mic to start recording<br>
-        <span style="font-size:11px;color:var(--text-f)">Transcript appends as you speak</span>
-      </span>
+      </div>
+      <div class="tm-words"><span class="w1">twin</span><span class="w2">mind</span></div>
+    </a>
+    <div class="tb-center">
+      <div class="spill" id="sPill"><span class="sdot"></span><span id="sTxt">IDLE</span></div>
+      <span class="lpill" id="lTx"></span>
+      <span class="lpill" id="lSg"></span>
+      <span class="lpill" id="lCh"></span>
     </div>
-    <div class="tx-scroll" id="txScroll">
-      <p class="col-empty" id="txEmpty">No transcript yet — start the mic.</p>
-      <div id="txChunks"></div>
+    <div class="tb-right">
+      <button class="btn btn-out" id="btnViewSum" style="display:none">View Summary</button>
+      <button class="btn btn-out" id="btnSet">Settings</button>
+      <button class="btn btn-out" id="btnExp">Export Session</button>
     </div>
-  </section>
+  </header>
 
-  <section class="col" aria-label="Live Suggestions">
-    <div class="col-head">
-      <span class="col-lbl">2. Live Suggestions</span>
-      <span class="col-meta" id="bBadge">0 Batches</span>
-    </div>
-    <div class="sug-toolbar">
-      <button class="btn-refresh" id="btnRef">
-        <span class="spnico" id="spIco">&#x21BA;</span> Reload suggestions
-      </button>
-      <span class="cd-txt" id="cdTxt"></span>
-    </div>
-    <div class="sug-feed" id="sugFeed">
-      <p class="col-empty">Suggestions appear here once recording starts.</p>
-    </div>
-  </section>
+  <main class="workspace">
+    <section class="col" aria-label="Mic and Transcript">
+      <div class="col-head">
+        <span class="col-lbl">1. Mic &amp; Transcript</span>
+        <span class="col-meta" id="recBadge">IDLE</span>
+      </div>
+      <div class="mic-area">
+        <button class="mic-btn" id="btnMic" aria-label="Start recording">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="2" width="6" height="11" rx="3" fill="white" />
+            <path d="M5 11a7 7 0 0 0 14 0" stroke="white" stroke-width="2" stroke-linecap="round" />
+            <line x1="12" y1="18" x2="12" y2="22" stroke="white" stroke-width="2" stroke-linecap="round" />
+            <line x1="9" y1="22" x2="15" y2="22" stroke="white" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <span class="mic-lbl" id="micLbl">
+          Click mic to start recording<br>
+          <span style="font-size:11px;color:var(--text-f)">Transcript appends as you speak</span>
+        </span>
+      </div>
+      <div class="tx-scroll" id="txScroll">
+        <p class="col-empty" id="txEmpty">No transcript yet — start the mic.</p>
+        <div id="txChunks"></div>
+      </div>
+    </section>
 
-  <section class="col" aria-label="Chat">
-    <div class="col-head">
-      <span class="col-lbl">3. Chat</span>
-      <span class="col-meta">SESSION ONLY</span>
-    </div>
-    <div class="chat-thread" id="chatThread">
-      <p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>
-    </div>
-    <div class="chat-foot">
-      <textarea class="chat-inp" id="chatInp" placeholder="Ask TwinMind anything about the conversation…" rows="1"></textarea>
-      <button class="btn-send" id="btnSend" disabled>Send</button>
-    </div>
-  </section>
-</main>
+    <section class="col" aria-label="Live Suggestions">
+      <div class="col-head">
+        <span class="col-lbl">2. Live Suggestions</span>
+        <span class="col-meta" id="bBadge">0 Batches</span>
+      </div>
+      <div class="sug-toolbar">
+        <button class="btn-refresh" id="btnRef">
+          <span class="spnico" id="spIco">&#x21BA;</span> Reload suggestions
+        </button>
+        <span class="cd-txt" id="cdTxt"></span>
+      </div>
+      <div class="sug-feed" id="sugFeed">
+        <p class="col-empty">Suggestions appear here once recording starts.</p>
+      </div>
+    </section>
 
-<!-- SETTINGS MODAL -->
-<div class="overlay hidden" id="modal" role="dialog" aria-modal="true">
-  <div class="modal">
-    <div class="modal-head">
-      <span class="modal-title">Settings</span>
-      <button class="modal-x" id="btnClose">&#x2715;</button>
-    </div>
-    <div class="modal-body">
-      <div class="api-note">
-        <strong>Groq API key required.</strong> Bring your own key — free at
-        <a href="https://console.groq.com" target="_blank">console.groq.com</a>.
+    <section class="col" aria-label="Chat">
+      <div class="col-head">
+        <span class="col-lbl">3. Chat</span>
+        <span class="col-meta">SESSION ONLY</span>
       </div>
-      <div class="sect-title">API &amp; Models</div>
-      <label class="fld">Groq API Key<input type="password" id="fKey" placeholder="gsk_…" autocomplete="off"/></label>
-      <label class="fld">
-        Backend URL (no trailing slash)
-        <span class="fld-desc">Your Render backend URL. Leave empty to use the Vercel proxy.</span>
-        <input type="url" id="fBase" placeholder="https://your-backend.onrender.com" autocomplete="off"/>
-      </label>
-      <div class="fld-2">
-        <label class="fld">LLM Model<span class="fld-desc">Used for suggestions and chat</span><input type="text" id="fMod"/></label>
-        <label class="fld">Whisper Model<span class="fld-desc">Used for transcription</span><input type="text" id="fWhisper"/></label>
+      <div class="chat-thread" id="chatThread">
+        <p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>
       </div>
-      <div class="sect-title">Context &amp; Timing</div>
-      <div class="fld-3">
-        <label class="fld">Suggestion context (words)<span class="fld-desc">Recent words per suggestion call</span><input type="number" id="fCS" min="100" max="4000"/></label>
-        <label class="fld">Chat context (words)<span class="fld-desc">Words sent for chat answers</span><input type="number" id="fCC" min="200" max="8000"/></label>
-        <label class="fld">Auto-refresh (seconds)<span class="fld-desc">Suggestion refresh interval</span><input type="number" id="fRS" min="5" max="120"/></label>
+      <div class="chat-foot">
+        <textarea class="chat-inp" id="chatInp" placeholder="Ask TwinMind anything about the conversation…"
+          rows="1"></textarea>
+        <button class="btn-send" id="btnSend" disabled>Send</button>
       </div>
-      <div class="sect-title">LLM Parameters</div>
-      <div class="fld-4">
-        <label class="fld">Suggestion temp<span class="fld-desc">0 = focused, 1 = creative</span><input type="number" id="fST" min="0" max="2" step="0.1"/></label>
-        <label class="fld">Suggestion tokens<span class="fld-desc">Max tokens per batch</span><input type="number" id="fSMT" min="200" max="2000"/></label>
-        <label class="fld">Chat temp<span class="fld-desc">0 = focused, 1 = creative</span><input type="number" id="fCT" min="0" max="2" step="0.1"/></label>
-        <label class="fld">Chat tokens<span class="fld-desc">Max tokens per response</span><input type="number" id="fCMT" min="200" max="4000"/></label>
+    </section>
+  </main>
+
+  <!-- SETTINGS MODAL -->
+  <div class="overlay hidden" id="modal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">Settings</span>
+        <button class="modal-x" id="btnClose">&#x2715;</button>
       </div>
-      <div class="sect-title">Prompts</div>
-      <label class="fld">Live Suggestion Prompt<span class="fld-desc">System prompt for every suggestion refresh</span><textarea id="fSP" rows="8"></textarea></label>
-      <label class="fld">Detail Prompt (on click)<span class="fld-desc">Used when a suggestion card is clicked</span><textarea id="fDP" rows="5"></textarea></label>
-      <label class="fld">Chat Prompt<span class="fld-desc">Used for free-form chat questions</span><textarea id="fCP" rows="4"></textarea></label>
-    </div>
-    <div class="modal-foot">
-      <span class="modal-note">Stored in session storage only. Never sent anywhere except Groq.</span>
-      <div class="modal-btns">
-        <button class="btn btn-out" id="btnRst">Reset Defaults</button>
-        <button class="btn btn-blue" id="btnSav">Save Settings</button>
+      <div class="modal-body">
+        <div class="api-note">
+          <strong>Groq API key required.</strong> Bring your own key — free at
+          <a href="https://console.groq.com" target="_blank">console.groq.com</a>.
+        </div>
+        <div class="sect-title">API &amp; Models</div>
+        <label class="fld">Groq API Key<input type="password" id="fKey" placeholder="gsk_…"
+            autocomplete="off" /></label>
+        <label class="fld">
+          Backend URL (no trailing slash)
+          <span class="fld-desc">Your Render backend URL. Leave empty to use the Vercel proxy.</span>
+          <input type="url" id="fBase" placeholder="https://your-backend.onrender.com" autocomplete="off" />
+        </label>
+        <div class="fld-2">
+          <label class="fld">LLM Model<span class="fld-desc">Used for suggestions and chat</span><input type="text"
+              id="fMod" /></label>
+          <label class="fld">Whisper Model<span class="fld-desc">Used for transcription</span><input type="text"
+              id="fWhisper" /></label>
+        </div>
+        <div class="sect-title">Context &amp; Timing</div>
+        <div class="fld-3">
+          <label class="fld">Suggestion context (words)<span class="fld-desc">Recent words per suggestion
+              call</span><input type="number" id="fCS" min="100" max="4000" /></label>
+          <label class="fld">Chat context (words)<span class="fld-desc">Words sent for chat answers</span><input
+              type="number" id="fCC" min="200" max="8000" /></label>
+          <label class="fld">Auto-refresh (seconds)<span class="fld-desc">Suggestion refresh interval</span><input
+              type="number" id="fRS" min="5" max="120" /></label>
+        </div>
+        <div class="sect-title">LLM Parameters</div>
+        <div class="fld-4">
+          <label class="fld">Suggestion temp<span class="fld-desc">0 = focused, 1 = creative</span><input type="number"
+              id="fST" min="0" max="2" step="0.1" /></label>
+          <label class="fld">Suggestion tokens<span class="fld-desc">Max tokens per batch</span><input type="number"
+              id="fSMT" min="200" max="2000" /></label>
+          <label class="fld">Chat temp<span class="fld-desc">0 = focused, 1 = creative</span><input type="number"
+              id="fCT" min="0" max="2" step="0.1" /></label>
+          <label class="fld">Chat tokens<span class="fld-desc">Max tokens per response</span><input type="number"
+              id="fCMT" min="200" max="4000" /></label>
+        </div>
+        <div class="sect-title">Prompts</div>
+        <label class="fld">Live Suggestion Prompt<span class="fld-desc">System prompt for every suggestion
+            refresh</span><textarea id="fSP" rows="8"></textarea></label>
+        <label class="fld">Detail Prompt (on click)<span class="fld-desc">Used when a suggestion card is
+            clicked</span><textarea id="fDP" rows="5"></textarea></label>
+        <label class="fld">Chat Prompt<span class="fld-desc">Used for free-form chat questions</span><textarea id="fCP"
+            rows="4"></textarea></label>
+      </div>
+      <div class="modal-foot">
+        <span class="modal-note">Stored in session storage only. Never sent anywhere except Groq.</span>
+        <div class="modal-btns">
+          <button class="btn btn-out" id="btnRst">Reset Defaults</button>
+          <button class="btn btn-blue" id="btnSav">Save Settings</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- SUMMARY LIST MODAL -->
-<div class="overlay hidden" id="sumListModal" role="dialog" aria-modal="true">
-  <div class="modal" style="width:540px">
-    <div class="modal-head">
-      <span class="modal-title">Meeting Summaries</span>
-      <button class="modal-x" id="btnSumListClose">&#x2715;</button>
-    </div>
-    <div class="modal-body" id="sumListBody" style="padding:0;gap:0"></div>
-    <div class="modal-foot" style="justify-content:flex-end">
-      <button class="btn btn-out" id="btnSumListClose2">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- SUMMARY DETAIL MODAL -->
-<div class="overlay hidden" id="sumModal" role="dialog" aria-modal="true">
-  <div class="modal" style="width:780px;max-width:95vw">
-    <div class="modal-head">
-      <span class="modal-title" id="sumModalTitle">Meeting Summary</span>
-      <button class="modal-x" id="btnSumClose">&#x2715;</button>
-    </div>
-    <div class="modal-body" id="sumBody" style="gap:0;padding:0">
-      <div style="padding:32px;text-align:center;color:var(--text-f);font-size:13px">Generating summary…</div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-out" id="btnSumBack">Back to list</button>
-      <div class="modal-btns">
-        <button class="btn btn-out" id="btnSumCopy">Copy</button>
-        <button class="btn btn-out" id="btnSumClose2">Close</button>
+  <!-- SUMMARY LIST MODAL -->
+  <div class="overlay hidden" id="sumListModal" role="dialog" aria-modal="true">
+    <div class="modal" style="width:540px">
+      <div class="modal-head">
+        <span class="modal-title">Meeting Summaries</span>
+        <button class="modal-x" id="btnSumListClose">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="sumListBody" style="padding:0;gap:0"></div>
+      <div class="modal-foot" style="justify-content:flex-end">
+        <button class="btn btn-out" id="btnSumListClose2">Close</button>
       </div>
     </div>
   </div>
-</div>
 
-<div class="toast-dock" id="toastDock"></div>
+  <!-- SUMMARY DETAIL MODAL -->
+  <div class="overlay hidden" id="sumModal" role="dialog" aria-modal="true">
+    <div class="modal" style="width:780px;max-width:95vw">
+      <div class="modal-head">
+        <span class="modal-title" id="sumModalTitle">Meeting Summary</span>
+        <button class="modal-x" id="btnSumClose">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="sumBody" style="gap:0;padding:0">
+        <div style="padding:32px;text-align:center;color:var(--text-f);font-size:13px">Generating summary…</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-out" id="btnSumBack">Back to list</button>
+        <div class="modal-btns">
+          <button class="btn btn-out" id="btnSumCopy">Copy</button>
+          <button class="btn btn-out" id="btnSumClose2">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<script>
-'use strict';
+  <div class="toast-dock" id="toastDock"></div>
 
-const DEF_SP = `You are a real-time AI meeting copilot. Surface EXACTLY 3 suggestions that are immediately actionable for someone mid-conversation RIGHT NOW.
+  <script>
+    'use strict';
+
+    const DEF_SP = `You are a real-time AI meeting copilot. Surface EXACTLY 3 suggestions that are immediately actionable for someone mid-conversation RIGHT NOW.
 
 SUGGESTION TYPES — pick the best mix for this exact moment:
 - QUESTION: A smart follow-up question the listener should ask next
@@ -410,7 +1406,7 @@ OUTPUT FORMAT:
   ]
 }`;
 
-const DEF_DP = `You are a meeting assistant expanding a suggestion clicked during a live conversation.
+    const DEF_DP = `You are a meeting assistant expanding a suggestion clicked during a live conversation.
 
 Structure your answer:
 1. Direct Answer — 2-3 sentences, specific, grounded in the transcript
@@ -419,414 +1415,415 @@ Structure your answer:
 
 Rules: reference actual words from transcript · max 300 words · be actionable not generic`;
 
-const DEF_CP = `You are a knowledgeable meeting assistant with full access to the conversation transcript.
+    const DEF_CP = `You are a knowledgeable meeting assistant with full access to the conversation transcript.
 
 Lead with the direct answer then explain. Reference exact phrases from transcript. Use short paragraphs. State uncertainty clearly. Max 400 words unless depth is clearly needed.`;
 
-const DEFAULTS = {
-  apiKey:       '',
-  apiBase:      'https://twinmind-backend-6wc0.onrender.com',
-  model:        'meta-llama/llama-4-scout-17b-16e-instruct',
-  whisperModel: 'whisper-large-v3-turbo',
-  ctxSug:       1500,
-  ctxChat:      3000,
-  refreshSec:   5,
-  sugTemp:      0.4,
-  sugMaxTok:    900,
-  chatTemp:     0.5,
-  chatMaxTok:   1000,
-  sugP:         DEF_SP,
-  detP:         DEF_DP,
-  chatP:        DEF_CP,
-};
+    const DEFAULTS = {
+      apiKey: '',
+      apiBase: 'https://twinmind-backend-6wc0.onrender.com',
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      whisperModel: 'whisper-large-v3-turbo',
+      ctxSug: 1500,
+      ctxChat: 3000,
+      refreshSec: 5,
+      sugTemp: 0.4,
+      sugMaxTok: 900,
+      chatTemp: 0.5,
+      chatMaxTok: 1000,
+      sugP: DEF_SP,
+      detP: DEF_DP,
+      chatP: DEF_CP,
+    };
 
-const TYPE = {
-  QUESTION:      { l: 'Question to Ask',  ac: 'var(--blue)',   bg: 'var(--blue-l)',   br: 'var(--blue-b)',   tx: '#1d4ed8' },
-  TALKING_POINT: { l: 'Talking Point',    ac: 'var(--teal)',   bg: 'var(--teal-l)',   br: 'var(--green-b)',  tx: '#065f46' },
-  ANSWER:        { l: 'Answer',           ac: 'var(--amber)',  bg: 'var(--amber-l)',  br: 'var(--amber-b)',  tx: 'var(--amber)' },
-  FACT_CHECK:    { l: 'Fact Check',       ac: 'var(--red)',    bg: 'var(--red-l)',    br: 'var(--red-b)',    tx: 'var(--red)' },
-  CLARIFY:       { l: 'Clarification',    ac: 'var(--violet)', bg: 'var(--violet-l)', br: 'var(--violet-b)', tx: 'var(--violet)' },
-  ACTION_ITEM:   { l: 'Action Item',      ac: 'var(--green)',  bg: 'var(--green-l)',  br: 'var(--green-b)',  tx: '#065f46' },
-};
+    const TYPE = {
+      QUESTION: { l: 'Question to Ask', ac: 'var(--blue)', bg: 'var(--blue-l)', br: 'var(--blue-b)', tx: '#1d4ed8' },
+      TALKING_POINT: { l: 'Talking Point', ac: 'var(--teal)', bg: 'var(--teal-l)', br: 'var(--green-b)', tx: '#065f46' },
+      ANSWER: { l: 'Answer', ac: 'var(--amber)', bg: 'var(--amber-l)', br: 'var(--amber-b)', tx: 'var(--amber)' },
+      FACT_CHECK: { l: 'Fact Check', ac: 'var(--red)', bg: 'var(--red-l)', br: 'var(--red-b)', tx: 'var(--red)' },
+      CLARIFY: { l: 'Clarification', ac: 'var(--violet)', bg: 'var(--violet-l)', br: 'var(--violet-b)', tx: 'var(--violet)' },
+      ACTION_ITEM: { l: 'Action Item', ac: 'var(--green)', bg: 'var(--green-l)', br: 'var(--green-b)', tx: '#065f46' },
+    };
 
-const S = {
-  rec: false, mr: null, recMime: 'audio/webm',
-  audioParts: [], audioFlushTimer: null,
-  tx: [], batches: [], chat: [],
-  cfg: loadCfg(),
-  tR: null, tC: null, sl: 0,
-  sugLoading: false, txQueue: [], txInFlight: false,
-};
+    const S = {
+      rec: false, mr: null, recMime: 'audio/webm',
+      audioParts: [], audioFlushTimer: null,
+      tx: [], batches: [], chat: [],
+      cfg: loadCfg(),
+      tR: null, tC: null, sl: 0,
+      sugLoading: false, txQueue: [], txInFlight: false,
+      lastWhisperText: '',
+    };
 
-let S_currentSummary = null;
+    let S_currentSummary = null;
 
-const G = id => document.getElementById(id);
+    const G = id => document.getElementById(id);
 
-function loadCfg() {
-  try {
-    const raw = sessionStorage.getItem('tm_cfg');
-    return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
-  } catch { return { ...DEFAULTS }; }
-}
+    function loadCfg() {
+      try {
+        const raw = sessionStorage.getItem('tm_cfg');
+        return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+      } catch { return { ...DEFAULTS }; }
+    }
 
-function saveCfg() {
-  try { sessionStorage.setItem('tm_cfg', JSON.stringify(S.cfg)); } catch {}
-}
+    function saveCfg() {
+      try { sessionStorage.setItem('tm_cfg', JSON.stringify(S.cfg)); } catch { }
+    }
 
-function loadSummaries() {
-  try {
-    const raw = localStorage.getItem('tm_summaries');
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
+    function loadSummaries() {
+      try {
+        const raw = localStorage.getItem('tm_summaries');
+        return raw ? JSON.parse(raw) : [];
+      } catch { return []; }
+    }
 
-function saveSummaries(list) {
-  try { localStorage.setItem('tm_summaries', JSON.stringify(list)); } catch {}
-}
+    function saveSummaries(list) {
+      try { localStorage.setItem('tm_summaries', JSON.stringify(list)); } catch { }
+    }
 
-function apiUrl(path) {
-  const base = String(S.cfg.apiBase ?? '').trim().replace(/\/$/, '');
-  if (!base) return path;
-  return base + (path.startsWith('/') ? path : '/' + path);
-}
+    function apiUrl(path) {
+      const base = String(S.cfg.apiBase ?? '').trim().replace(/\/$/, '');
+      if (!base) return path;
+      return base + (path.startsWith('/') ? path : '/' + path);
+    }
 
-function openModal() {
-  G('fKey').value      = S.cfg.apiKey;
-  G('fBase').value     = S.cfg.apiBase ?? '';
-  G('fMod').value      = S.cfg.model;
-  G('fWhisper').value  = S.cfg.whisperModel;
-  G('fCS').value       = S.cfg.ctxSug;
-  G('fCC').value       = S.cfg.ctxChat;
-  G('fRS').value       = S.cfg.refreshSec;
-  G('fST').value       = S.cfg.sugTemp;
-  G('fSMT').value      = S.cfg.sugMaxTok;
-  G('fCT').value       = S.cfg.chatTemp;
-  G('fCMT').value      = S.cfg.chatMaxTok;
-  G('fSP').value       = S.cfg.sugP;
-  G('fDP').value       = S.cfg.detP;
-  G('fCP').value       = S.cfg.chatP;
-  G('modal').classList.remove('hidden');
-  G('fKey').focus();
-}
+    function openModal() {
+      G('fKey').value = S.cfg.apiKey;
+      G('fBase').value = S.cfg.apiBase ?? '';
+      G('fMod').value = S.cfg.model;
+      G('fWhisper').value = S.cfg.whisperModel;
+      G('fCS').value = S.cfg.ctxSug;
+      G('fCC').value = S.cfg.ctxChat;
+      G('fRS').value = S.cfg.refreshSec;
+      G('fST').value = S.cfg.sugTemp;
+      G('fSMT').value = S.cfg.sugMaxTok;
+      G('fCT').value = S.cfg.chatTemp;
+      G('fCMT').value = S.cfg.chatMaxTok;
+      G('fSP').value = S.cfg.sugP;
+      G('fDP').value = S.cfg.detP;
+      G('fCP').value = S.cfg.chatP;
+      G('modal').classList.remove('hidden');
+      G('fKey').focus();
+    }
 
-function closeModal() { G('modal').classList.add('hidden'); }
+    function closeModal() { G('modal').classList.add('hidden'); }
 
-function saveModal() {
-  S.cfg.apiKey      = G('fKey').value.trim();
-  S.cfg.apiBase     = G('fBase').value.trim().replace(/\/$/, '');
-  S.cfg.model       = G('fMod').value.trim() || DEFAULTS.model;
-  S.cfg.whisperModel= G('fWhisper').value.trim() || DEFAULTS.whisperModel;
-  S.cfg.ctxSug      = parseFloat(G('fCS').value) || DEFAULTS.ctxSug;
-  S.cfg.ctxChat     = parseFloat(G('fCC').value) || DEFAULTS.ctxChat;
-  S.cfg.refreshSec  = parseFloat(G('fRS').value) || DEFAULTS.refreshSec;
-  const st = parseFloat(G('fST').value);
-  S.cfg.sugTemp     = Number.isFinite(st) ? st : DEFAULTS.sugTemp;
-  S.cfg.sugMaxTok   = parseInt(G('fSMT').value, 10) || DEFAULTS.sugMaxTok;
-  const ct = parseFloat(G('fCT').value);
-  S.cfg.chatTemp    = Number.isFinite(ct) ? ct : DEFAULTS.chatTemp;
-  S.cfg.chatMaxTok  = parseInt(G('fCMT').value, 10) || DEFAULTS.chatMaxTok;
-  S.cfg.sugP        = G('fSP').value.trim() || DEF_SP;
-  S.cfg.detP        = G('fDP').value.trim() || DEF_DP;
-  S.cfg.chatP       = G('fCP').value.trim() || DEF_CP;
-  saveCfg();
-  closeModal();
-  toast('Settings saved.');
-  syncChatSendBtn();
-}
+    function saveModal() {
+      S.cfg.apiKey = G('fKey').value.trim();
+      S.cfg.apiBase = G('fBase').value.trim().replace(/\/$/, '');
+      S.cfg.model = G('fMod').value.trim() || DEFAULTS.model;
+      S.cfg.whisperModel = G('fWhisper').value.trim() || DEFAULTS.whisperModel;
+      S.cfg.ctxSug = parseFloat(G('fCS').value) || DEFAULTS.ctxSug;
+      S.cfg.ctxChat = parseFloat(G('fCC').value) || DEFAULTS.ctxChat;
+      S.cfg.refreshSec = parseFloat(G('fRS').value) || DEFAULTS.refreshSec;
+      const st = parseFloat(G('fST').value);
+      S.cfg.sugTemp = Number.isFinite(st) ? st : DEFAULTS.sugTemp;
+      S.cfg.sugMaxTok = parseInt(G('fSMT').value, 10) || DEFAULTS.sugMaxTok;
+      const ct = parseFloat(G('fCT').value);
+      S.cfg.chatTemp = Number.isFinite(ct) ? ct : DEFAULTS.chatTemp;
+      S.cfg.chatMaxTok = parseInt(G('fCMT').value, 10) || DEFAULTS.chatMaxTok;
+      S.cfg.sugP = G('fSP').value.trim() || DEF_SP;
+      S.cfg.detP = G('fDP').value.trim() || DEF_DP;
+      S.cfg.chatP = G('fCP').value.trim() || DEF_CP;
+      saveCfg();
+      closeModal();
+      toast('Settings saved.');
+      syncChatSendBtn();
+    }
 
-function resetModal() {
-  if (!confirm('Reset all settings to defaults?')) return;
-  Object.assign(S.cfg, DEFAULTS);
-  saveCfg();
-  openModal();
-}
+    function resetModal() {
+      if (!confirm('Reset all settings to defaults?')) return;
+      Object.assign(S.cfg, DEFAULTS);
+      saveCfg();
+      openModal();
+    }
 
-function toast(msg, err = false) {
-  const d = document.createElement('div');
-  d.className = 'toast' + (err ? ' err' : '');
-  d.textContent = msg;
-  G('toastDock').appendChild(d);
-  setTimeout(() => d.remove(), 3500);
-}
+    function toast(msg, err = false) {
+      const d = document.createElement('div');
+      d.className = 'toast' + (err ? ' err' : '');
+      d.textContent = msg;
+      G('toastDock').appendChild(d);
+      setTimeout(() => d.remove(), 3500);
+    }
 
-function lat(type, ms) {
-  const map = { tx: G('lTx'), sg: G('lSg'), ch: G('lCh') };
-  const lbl = { tx: 'Transcribe', sg: 'Suggest', ch: 'Chat token' };
-  const el = map[type];
-  if (!el) return;
-  el.textContent = `${lbl[type]}: ${Math.round(ms)}ms`;
-  el.className = 'lpill show ' + (ms < 3000 ? 'fast' : 'slow');
-}
+    function lat(type, ms) {
+      const map = { tx: G('lTx'), sg: G('lSg'), ch: G('lCh') };
+      const lbl = { tx: 'Transcribe', sg: 'Suggest', ch: 'Chat token' };
+      const el = map[type];
+      if (!el) return;
+      el.textContent = `${lbl[type]}: ${Math.round(ms)}ms`;
+      el.className = 'lpill show ' + (ms < 3000 ? 'fast' : 'slow');
+    }
 
-function clearRecTimers() {
-  [S.tR, S.tC].forEach(t => { if (t) clearInterval(t); });
-  S.tR = S.tC = null;
-}
+    function clearRecTimers() {
+      [S.tR, S.tC].forEach(t => { if (t) clearInterval(t); });
+      S.tR = S.tC = null;
+    }
 
-function resetSessionUI() {
-  S.tx = []; S.batches = []; S.chat = [];
-  S.txQueue = []; S.txInFlight = false;
-  S.audioParts = [];
-  S_currentSummary = null;
-  G('txChunks').innerHTML = '';
-  if (!G('txEmpty')) {
-    const e = document.createElement('p');
-    e.className = 'col-empty'; e.id = 'txEmpty';
-    e.textContent = 'No transcript yet — start the mic.';
-    G('txScroll').insertBefore(e, G('txChunks'));
-  }
-  G('sugFeed').innerHTML = '<p class="col-empty">Suggestions appear here once recording starts.</p>';
-  G('chatThread').innerHTML = '<p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>';
-  G('bBadge').textContent = '0 Batches';
-  G('btnViewSum').style.display = 'none';
-  ['lTx','lSg','lCh'].forEach(id => { const el = G(id); if (el) { el.className = 'lpill'; el.textContent = ''; } });
-}
-
-async function startRec() {
-  if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
-  try {
-    clearRecTimers();
-    resetSessionUI();
-
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
-    const mime = mimes.find(m => MediaRecorder.isTypeSupported(m)) || '';
-    S.mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-    S.recMime = S.mr.mimeType || 'audio/webm';
-    S.audioParts = [];
-
-    S.mr.ondataavailable = e => { if (e.data && e.data.size > 0) S.audioParts.push(e.data); };
-    S.mr.onerror = e => { toast(`Microphone error: ${e.error?.message || 'Unknown'}`, true); stopRec(); };
-    S.mr.start(250);
-
-    let lastSentCount = 0;
-
-    S.audioFlushTimer = setInterval(() => {
-      if (S.audioParts.length <= lastSentCount) return;
-      const toSend = new Blob(S.audioParts, { type: S.recMime });
-      if (toSend.size >= 5_000) {
-        lastSentCount = S.audioParts.length;
-        enqueueTranscribe(toSend);
+    function resetSessionUI() {
+      S.tx = []; S.batches = []; S.chat = [];
+      S.txQueue = []; S.txInFlight = false;
+      S.audioParts = [];
+      S.lastWhisperText = '';
+      S_currentSummary = null;
+      G('txChunks').innerHTML = '';
+      if (!G('txEmpty')) {
+        const e = document.createElement('p');
+        e.className = 'col-empty'; e.id = 'txEmpty';
+        e.textContent = 'No transcript yet — start the mic.';
+        G('txScroll').insertBefore(e, G('txChunks'));
       }
-    }, 8000);
-
-    S.rec = true;
-    setRecUI(true);
-    startCycle();
-  } catch (e) {
-    toast(e.name === 'NotAllowedError'
-      ? 'Microphone permission denied. Allow mic access and try again.'
-      : `Microphone error: ${e.message}`, true);
-  }
-}
-
-function enqueueTranscribe(blob) {
-  S.txQueue.push(blob);
-  void processTranscribeQueue();
-}
-
-async function processTranscribeQueue() {
-  if (S.txInFlight) return;
-  S.txInFlight = true;
-  try {
-    while (S.txQueue.length) {
-      const blob = S.txQueue.shift();
-      await doTranscribe(blob);
-    }
-  } finally {
-    S.txInFlight = false;
-  }
-}
-
-function stopRec() {
-  if (S.audioFlushTimer) { clearInterval(S.audioFlushTimer); S.audioFlushTimer = null; }
-  if (S.mr && S.mr.state !== 'inactive') {
-    try { S.mr.stop(); } catch {}
-    try { S.mr.stream?.getTracks().forEach(t => t.stop()); } catch {}
-  }
-
-  setTimeout(() => {
-    if (S.audioParts.length > 0) {
-      const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
-      if (merged.size >= 1000) enqueueTranscribe(merged);
-    }
-  }, 400);
-
-  clearRecTimers();
-  S.rec = false;
-  setRecUI(false);
-  if (S.tx.length > 0) {
-    G('btnViewSum').style.display = 'inline-flex';
-    generateAndSaveSummary();
-  }
-}
-
-function setRecUI(on) {
-  G('btnMic').classList.toggle('rec', on);
-  G('micLbl').innerHTML = on
-    ? `Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Suggestions every ~${S.cfg.refreshSec}s</span>`
-    : 'Click mic to start recording<br><span style="font-size:11px;color:var(--text-f)">Transcript appends as you speak</span>';
-  G('recBadge').textContent = on ? 'RECORDING' : 'IDLE';
-  G('sTxt').textContent = on ? 'RECORDING' : 'IDLE';
-  G('sPill').classList.toggle('live', on);
-  G('btnRef').disabled = false;
-}
-
-async function doTranscribe(blob) {
-  if (!blob || blob.size < 1000) return;
-  const form = new FormData();
-  const ext = (blob.type || '').includes('ogg') ? 'ogg' : (blob.type || '').includes('mp4') ? 'mp4' : 'webm';
-  form.append('audio', blob, `recording.${ext}`);
-  const t0 = Date.now();
-  try {
-    const res = await fetch(apiUrl('/api/transcribe'), {
-      method: 'POST',
-      headers: {
-        'x-groq-api-key': S.cfg.apiKey,
-        'x-whisper-model': S.cfg.whisperModel,
-        'x-whisper-language': 'en',
-      },
-      body: form,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) { toast(`Transcription error: ${data.error || res.statusText}`, true); return; }
-
-    const text = (data.text || '').trim();
-    if (!text) return;
-    lat('tx', Date.now() - t0);
-
-  // Extract only new words not yet shown
-    const allShown = S.tx.map(c => c.text).join(' ').trim();
-    const newText = allShown ? extractNewContent(text, allShown) : text;
-    if (newText) {
-      addChunk(newText);
-      void fetchSug();
+      G('sugFeed').innerHTML = '<p class="col-empty">Suggestions appear here once recording starts.</p>';
+      G('chatThread').innerHTML = '<p class="col-empty" id="chatEmpty">Click a suggestion or type a question below.</p>';
+      G('bBadge').textContent = '0 Batches';
+      G('btnViewSum').style.display = 'none';
+      ['lTx', 'lSg', 'lCh'].forEach(id => { const el = G(id); if (el) { el.className = 'lpill'; el.textContent = ''; } });
     }
 
-  } catch (e) {
-    toast(`Network error: ${e.message}`, true);
-  }
-}
+    async function startRec() {
+      if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
+      try {
+        clearRecTimers();
+        resetSessionUI();
 
-function addChunk(text) {
-  if (!text) return;
-  S.tx.push({ text, ts: new Date() });
-  const empty = G('txEmpty');
-  if (empty) empty.remove();
-  const d = document.createElement('div');
-  d.className = 'tx-chunk';
-  d.innerHTML = `<div class="tx-time">${fmt(S.tx.at(-1).ts)}</div><div class="tx-text">${esc(text)}</div>`;
-  G('txChunks').appendChild(d);
-  G('txScroll').scrollTop = G('txScroll').scrollHeight;
-}
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+        const mime = mimes.find(m => MediaRecorder.isTypeSupported(m)) || '';
+        S.mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+        S.recMime = S.mr.mimeType || 'audio/webm';
+        S.audioParts = [];
 
-function extractNewContent(incoming, alreadyShown) {
-  const norm = s => s.trim().replace(/\s+/g, ' ');
-  const inc = norm(incoming);
-  const shown = norm(alreadyShown);
-  if (inc === shown) return '';
-  if (inc.startsWith(shown)) return inc.slice(shown.length).trim();
-  // Word-level overlap: find longest suffix of shown that matches prefix of inc
-  const shownWords = shown.split(' ');
-  const incWords = inc.split(' ');
-  let overlap = 0;
-  const maxCheck = Math.min(shownWords.length, incWords.length, 60);
-  for (let len = maxCheck; len > 3; len--) {
-    const tail = shownWords.slice(-len).join(' ').toLowerCase();
-    const head = incWords.slice(0, len).join(' ').toLowerCase();
-    if (tail === head) { overlap = len; break; }
-  }
-  return incWords.slice(overlap).join(' ').trim();
-}
+        S.mr.ondataavailable = e => { if (e.data && e.data.size > 0) S.audioParts.push(e.data); };
+        S.mr.onerror = e => { toast(`Microphone error: ${e.error?.message || 'Unknown'}`, true); stopRec(); };
+        S.mr.start(250);
 
-function startCycle() {
-  S.sl = S.cfg.refreshSec;
-  G('cdTxt').textContent = `auto-refresh in ${S.sl}s`;
-  S.tC = setInterval(() => {
-    S.sl = Math.max(0, S.sl - 1);
-    G('cdTxt').textContent = `auto-refresh in ${S.sl}s`;
-  }, 1000);
-  S.tR = setInterval(async () => {
-    await fetchSug();
-    S.sl = S.cfg.refreshSec;
-  }, S.cfg.refreshSec * 1000);
-}
+        let lastSentCount = 0;
 
-async function fetchSug() {
-  if (S.sugLoading) return;
-  const all = S.tx.map(c => c.text).join(' ');
-  if (!all.trim()) { showSugMsg('No transcript yet. Speak after starting the mic.', false); return; }
+        S.audioFlushTimer = setInterval(() => {
+          if (S.audioParts.length <= lastSentCount) return;
+          const toSend = new Blob(S.audioParts, { type: S.recMime });
+          if (toSend.size >= 5_000) {
+            lastSentCount = S.audioParts.length;
+            enqueueTranscribe(toSend);
+          }
+        }, 8000);
 
-  S.sugLoading = true;
-  clearSugMsg();
-  setSpin(true);
-  renderSkels();
-
-  const context = all.split(' ').slice(-S.cfg.ctxSug).join(' ');
-  const avoidList = S.batches.flatMap(b => b.suggestions).slice(-9).map(s => `- ${s.title}`).join('\n');
-  const userMsg = [
-    `LIVE TRANSCRIPT — focus on the most recent content (last ~${S.cfg.ctxSug} words):`,
-    context,
-    avoidList ? `\nPREVIOUS SUGGESTIONS TO AVOID REPEATING:\n${avoidList}` : '',
-    '\nGenerate exactly 3 suggestions now.',
-  ].filter(Boolean).join('\n');
-
-  const t0 = Date.now();
-  try {
-    const res = await fetch(apiUrl('/api/suggestions'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
-      body: JSON.stringify({
-        systemPrompt: S.cfg.sugP,
-        userMessage:  userMsg,
-        model:        S.cfg.model,
-        temperature:  S.cfg.sugTemp,
-        maxTokens:    S.cfg.sugMaxTok,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const msg = data?.error || 'Unable to generate suggestions.';
-      showSugMsg(`Suggestions failed: ${msg}`, true);
-      toast(`Suggestions error: ${msg}`, true);
-      rmSkels(); return;
+        S.rec = true;
+        setRecUI(true);
+        startCycle();
+      } catch (e) {
+        toast(e.name === 'NotAllowedError'
+          ? 'Microphone permission denied. Allow mic access and try again.'
+          : `Microphone error: ${e.message}`, true);
+      }
     }
-    lat('sg', Date.now() - t0);
-    S.batches.unshift({ suggestions: data.suggestions || [], ts: new Date() });
-    renderBatches();
-    G('bBadge').textContent = `${S.batches.length} Batch${S.batches.length !== 1 ? 'es' : ''}`;
-  } catch (e) {
-    showSugMsg(`Network issue: ${e.message}`, true);
-    toast(`Network error: ${e.message}`, true);
-    rmSkels();
-  } finally {
-    S.sugLoading = false;
-    setSpin(false);
-  }
-}
 
-function renderBatches() {
-  G('sugFeed').innerHTML = '';
-  S.batches.forEach((b, i) => {
-    const w = document.createElement('div');
-    w.className = 'batch-grp ' + (i === 0 ? 'b-new' : 'b-old');
-    const r = document.createElement('div');
-    r.className = 'batch-row';
-    r.innerHTML = `<span class="batch-ts">${i === 0 ? 'Latest — ' : ''}${fmt(b.ts)}</span><span class="batch-hr"></span>`;
-    w.appendChild(r);
-    (b.suggestions || []).forEach(s => w.appendChild(mkCard(s)));
-    G('sugFeed').appendChild(w);
-  });
-}
+    function enqueueTranscribe(blob) {
+      S.txQueue.push(blob);
+      void processTranscribeQueue();
+    }
 
-function mkCard(s) {
-  const m = TYPE[s.type] ?? TYPE.QUESTION;
-  const c = document.createElement('div');
-  c.className = 'sc';
-  c.style.setProperty('--ca', m.ac);
-  c.setAttribute('role', 'button');
-  c.setAttribute('tabindex', '0');
-  c.innerHTML = `
+    async function processTranscribeQueue() {
+      if (S.txInFlight) return;
+      S.txInFlight = true;
+      try {
+        while (S.txQueue.length) {
+          const blob = S.txQueue.shift();
+          await doTranscribe(blob);
+        }
+      } finally {
+        S.txInFlight = false;
+      }
+    }
+
+    function stopRec() {
+      if (S.audioFlushTimer) { clearInterval(S.audioFlushTimer); S.audioFlushTimer = null; }
+      if (S.mr && S.mr.state !== 'inactive') {
+        try { S.mr.stop(); } catch { }
+        try { S.mr.stream?.getTracks().forEach(t => t.stop()); } catch { }
+      }
+
+      setTimeout(() => {
+        if (S.audioParts.length > 0) {
+          const merged = new Blob(S.audioParts, { type: S.recMime || 'audio/webm' });
+          if (merged.size >= 1000) enqueueTranscribe(merged);
+        }
+      }, 400);
+
+      clearRecTimers();
+      S.rec = false;
+      setRecUI(false);
+      if (S.tx.length > 0) {
+        G('btnViewSum').style.display = 'inline-flex';
+        generateAndSaveSummary();
+      }
+    }
+
+    function setRecUI(on) {
+      G('btnMic').classList.toggle('rec', on);
+      G('micLbl').innerHTML = on
+        ? `Recording — click to stop<br><span style="font-size:11px;color:var(--text-f)">Suggestions every ~${S.cfg.refreshSec}s</span>`
+        : 'Click mic to start recording<br><span style="font-size:11px;color:var(--text-f)">Transcript appends as you speak</span>';
+      G('recBadge').textContent = on ? 'RECORDING' : 'IDLE';
+      G('sTxt').textContent = on ? 'RECORDING' : 'IDLE';
+      G('sPill').classList.toggle('live', on);
+      G('btnRef').disabled = false;
+    }
+
+    async function doTranscribe(blob) {
+      if (!blob || blob.size < 1000) return;
+      const form = new FormData();
+      const ext = (blob.type || '').includes('ogg') ? 'ogg' : (blob.type || '').includes('mp4') ? 'mp4' : 'webm';
+      form.append('audio', blob, `recording.${ext}`);
+      const t0 = Date.now();
+      try {
+        const res = await fetch(apiUrl('/api/transcribe'), {
+          method: 'POST',
+          headers: {
+            'x-groq-api-key': S.cfg.apiKey,
+            'x-whisper-model': S.cfg.whisperModel,
+            'x-whisper-language': 'en',
+          },
+          body: form,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { toast(`Transcription error: ${data.error || res.statusText}`, true); return; }
+
+        const text = (data.text || '').trim();
+        if (!text) return;
+        lat('tx', Date.now() - t0);
+
+        const newText = extractNewContent(text, S.lastWhisperText);
+        S.lastWhisperText = text;
+        if (newText) {
+          addChunk(newText);
+          void fetchSug();
+        }
+
+      } catch (e) {
+        toast(`Network error: ${e.message}`, true);
+      }
+    }
+
+    function addChunk(text) {
+      if (!text) return;
+      S.tx.push({ text, ts: new Date() });
+      const empty = G('txEmpty');
+      if (empty) empty.remove();
+      const d = document.createElement('div');
+      d.className = 'tx-chunk';
+      d.innerHTML = `<div class="tx-text">${esc(text)} <span class="tx-time-inline">${fmt(S.tx.at(-1).ts)}</span></div>`;
+      G('txChunks').appendChild(d);
+      G('txScroll').scrollTop = G('txScroll').scrollHeight;
+    }
+
+    function extractNewContent(incoming, alreadyShown) {
+      const norm = s => s.trim().replace(/\s+/g, ' ');
+      const inc = norm(incoming);
+      const shown = norm(alreadyShown);
+      if (inc === shown) return '';
+      if (inc.startsWith(shown)) return inc.slice(shown.length).trim();
+      // Word-level overlap: find longest suffix of shown that matches prefix of inc
+      const shownWords = shown.split(' ');
+      const incWords = inc.split(' ');
+      let overlap = 0;
+      const maxCheck = Math.min(shownWords.length, incWords.length, 60);
+      for (let len = maxCheck; len > 3; len--) {
+        const tail = shownWords.slice(-len).join(' ').toLowerCase();
+        const head = incWords.slice(0, len).join(' ').toLowerCase();
+        if (tail === head) { overlap = len; break; }
+      }
+      return incWords.slice(overlap).join(' ').trim();
+    }
+
+    function startCycle() {
+      S.sl = S.cfg.refreshSec;
+      G('cdTxt').textContent = `auto-refresh in ${S.sl}s`;
+      S.tC = setInterval(() => {
+        S.sl = Math.max(0, S.sl - 1);
+        G('cdTxt').textContent = `auto-refresh in ${S.sl}s`;
+      }, 1000);
+      S.tR = setInterval(async () => {
+        await fetchSug();
+        S.sl = S.cfg.refreshSec;
+      }, S.cfg.refreshSec * 1000);
+    }
+
+    async function fetchSug() {
+      if (S.sugLoading) return;
+      const all = S.tx.map(c => c.text).join(' ');
+      if (!all.trim()) { showSugMsg('No transcript yet. Speak after starting the mic.', false); return; }
+
+      S.sugLoading = true;
+      clearSugMsg();
+      setSpin(true);
+      renderSkels();
+
+      const context = all.split(' ').slice(-S.cfg.ctxSug).join(' ');
+      const avoidList = S.batches.flatMap(b => b.suggestions).slice(-9).map(s => `- ${s.title}`).join('\n');
+      const userMsg = [
+        `LIVE TRANSCRIPT — focus on the most recent content (last ~${S.cfg.ctxSug} words):`,
+        context,
+        avoidList ? `\nPREVIOUS SUGGESTIONS TO AVOID REPEATING:\n${avoidList}` : '',
+        '\nGenerate exactly 3 suggestions now.',
+      ].filter(Boolean).join('\n');
+
+      const t0 = Date.now();
+      try {
+        const res = await fetch(apiUrl('/api/suggestions'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
+          body: JSON.stringify({
+            systemPrompt: S.cfg.sugP,
+            userMessage: userMsg,
+            model: S.cfg.model,
+            temperature: S.cfg.sugTemp,
+            maxTokens: S.cfg.sugMaxTok,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = data?.error || 'Unable to generate suggestions.';
+          showSugMsg(`Suggestions failed: ${msg}`, true);
+          toast(`Suggestions error: ${msg}`, true);
+          rmSkels(); return;
+        }
+        lat('sg', Date.now() - t0);
+        S.batches.unshift({ suggestions: data.suggestions || [], ts: new Date() });
+        renderBatches();
+        G('bBadge').textContent = `${S.batches.length} Batch${S.batches.length !== 1 ? 'es' : ''}`;
+      } catch (e) {
+        showSugMsg(`Network issue: ${e.message}`, true);
+        toast(`Network error: ${e.message}`, true);
+        rmSkels();
+      } finally {
+        S.sugLoading = false;
+        setSpin(false);
+      }
+    }
+
+    function renderBatches() {
+      G('sugFeed').innerHTML = '';
+      S.batches.forEach((b, i) => {
+        const w = document.createElement('div');
+        w.className = 'batch-grp ' + (i === 0 ? 'b-new' : 'b-old');
+        const r = document.createElement('div');
+        r.className = 'batch-row';
+        r.innerHTML = `<span class="batch-ts">${i === 0 ? 'Latest — ' : ''}${fmt(b.ts)}</span><span class="batch-hr"></span>`;
+        w.appendChild(r);
+        (b.suggestions || []).forEach(s => w.appendChild(mkCard(s)));
+        G('sugFeed').appendChild(w);
+      });
+    }
+
+    function mkCard(s) {
+      const m = TYPE[s.type] ?? TYPE.QUESTION;
+      const c = document.createElement('div');
+      c.className = 'sc';
+      c.style.setProperty('--ca', m.ac);
+      c.setAttribute('role', 'button');
+      c.setAttribute('tabindex', '0');
+      c.innerHTML = `
     <div class="sc-top">
       <span class="sc-badge" style="color:${m.tx};background:${m.bg};border-color:${m.br}">${m.l}</span>
       ${s.confidence ? `<span class="sc-conf">${esc(s.confidence)} confidence</span>` : ''}
@@ -835,145 +1832,145 @@ function mkCard(s) {
     <div class="sc-prev">${esc(s.preview)}</div>
     ${s.evidenceQuote ? `<div class="sc-quote">${esc(s.evidenceQuote)}</div>` : ''}
   `;
-  const fn = () => expCard(s);
-  c.addEventListener('click', fn);
-  c.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
-  return c;
-}
-
-function renderSkels() {
-  const w = document.createElement('div');
-  w.className = 'sk-wrap';
-  w.innerHTML = '<div class="sk-h"></div><div class="sk-c"></div><div class="sk-c"></div><div class="sk-c"></div>';
-  G('sugFeed').insertBefore(w, G('sugFeed').firstChild);
-}
-
-function rmSkels() { G('sugFeed').querySelector('.sk-wrap')?.remove(); }
-function setSpin(on) { G('spIco').classList.toggle('go', on); }
-function clearSugMsg() { G('sugFeed').querySelectorAll('.sug-msg').forEach(n => n.remove()); }
-function showSugMsg(text, err = false) {
-  clearSugMsg();
-  const d = document.createElement('div');
-  d.className = 'sug-msg' + (err ? ' err' : '');
-  d.textContent = text;
-  G('sugFeed').insertBefore(d, G('sugFeed').firstChild);
-}
-
-async function expCard(s) { await doChat(s.detail_prompt || s.preview, true); }
-
-async function doChat(msg, isExp = false) {
-  if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
-  if (!msg?.trim()) { toast('Type a message first.', true); return; }
-
-  const txCtx = S.tx.map(c => c.text).join(' ').split(' ').slice(-S.cfg.ctxChat).join(' ');
-  const empty = G('chatEmpty');
-  if (empty) empty.remove();
-
-  addBubble('user', msg);
-  S.chat.push({ role: 'user', content: msg, ts: new Date() });
-  G('chatInp').value = '';
-  G('chatInp').style.height = 'auto';
-  G('btnSend').disabled = true;
-
-  const aEl = addBubble('assistant', '');
-  const body = aEl.querySelector('.cm-body');
-  let full = '', firstTok = null;
-  const t0 = Date.now();
-
-  const payload = {
-    message:           msg,
-    transcriptContext: txCtx,
-    chatHistory:       S.chat.slice(0, -1).slice(-10).map(m => ({ role: m.role, content: m.content })),
-    isExpansion:       isExp,
-    systemPrompt:      isExp ? S.cfg.detP : S.cfg.chatP,
-    model:             S.cfg.model,
-    temperature:       S.cfg.chatTemp,
-    maxTokens:         S.cfg.chatMaxTok,
-  };
-
-  async function completeFallback() {
-    const r = await fetch(apiUrl('/api/chat/complete'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
-      body: JSON.stringify(payload),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error || r.statusText || 'Chat failed');
-    const t = String(j.text || '').trim();
-    if (t) { full = t; body.innerHTML = fmtMsg(full); G('chatThread').scrollTop = G('chatThread').scrollHeight; }
-  }
-
-  function applyLine(line) {
-    if (!line.startsWith('data: ')) return;
-    const p = line.slice(6).trim();
-    if (p === '[DONE]') return;
-    let obj;
-    try { obj = JSON.parse(p); } catch { return; }
-    if (obj.error) throw new Error(obj.error);
-    const delta = obj.delta;
-    if (typeof delta === 'string' && delta) {
-      if (!firstTok) { firstTok = Date.now(); lat('ch', firstTok - t0); }
-      full += delta;
-      body.innerHTML = fmtMsg(full);
-      G('chatThread').scrollTop = G('chatThread').scrollHeight;
+      const fn = () => expCard(s);
+      c.addEventListener('click', fn);
+      c.addEventListener('keydown', e => { if (e.key === 'Enter') fn(); });
+      return c;
     }
-  }
 
-  try {
-    const res = await fetch(apiUrl('/api/chat/stream'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      let errMsg = t;
-      try { errMsg = JSON.parse(t).error || errMsg; } catch {}
-      throw new Error(errMsg || res.statusText);
+    function renderSkels() {
+      const w = document.createElement('div');
+      w.className = 'sk-wrap';
+      w.innerHTML = '<div class="sk-h"></div><div class="sk-c"></div><div class="sk-c"></div><div class="sk-c"></div>';
+      G('sugFeed').insertBefore(w, G('sugFeed').firstChild);
     }
-    const reader = res.body?.getReader();
-    if (!reader) {
-      await completeFallback();
-    } else {
-      const dec = new TextDecoder();
-      let buf = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        let nl;
-        while ((nl = buf.indexOf('\n')) !== -1) { applyLine(buf.slice(0, nl)); buf = buf.slice(nl + 1); }
+
+    function rmSkels() { G('sugFeed').querySelector('.sk-wrap')?.remove(); }
+    function setSpin(on) { G('spIco').classList.toggle('go', on); }
+    function clearSugMsg() { G('sugFeed').querySelectorAll('.sug-msg').forEach(n => n.remove()); }
+    function showSugMsg(text, err = false) {
+      clearSugMsg();
+      const d = document.createElement('div');
+      d.className = 'sug-msg' + (err ? ' err' : '');
+      d.textContent = text;
+      G('sugFeed').insertBefore(d, G('sugFeed').firstChild);
+    }
+
+    async function expCard(s) { await doChat(s.detail_prompt || s.preview, true); }
+
+    async function doChat(msg, isExp = false) {
+      if (!S.cfg.apiKey) { openModal(); toast('Enter your Groq API key first.', true); return; }
+      if (!msg?.trim()) { toast('Type a message first.', true); return; }
+
+      const txCtx = S.tx.map(c => c.text).join(' ').split(' ').slice(-S.cfg.ctxChat).join(' ');
+      const empty = G('chatEmpty');
+      if (empty) empty.remove();
+
+      addBubble('user', msg);
+      S.chat.push({ role: 'user', content: msg, ts: new Date() });
+      G('chatInp').value = '';
+      G('chatInp').style.height = 'auto';
+      G('btnSend').disabled = true;
+
+      const aEl = addBubble('assistant', '');
+      const body = aEl.querySelector('.cm-body');
+      let full = '', firstTok = null;
+      const t0 = Date.now();
+
+      const payload = {
+        message: msg,
+        transcriptContext: txCtx,
+        chatHistory: S.chat.slice(0, -1).slice(-10).map(m => ({ role: m.role, content: m.content })),
+        isExpansion: isExp,
+        systemPrompt: isExp ? S.cfg.detP : S.cfg.chatP,
+        model: S.cfg.model,
+        temperature: S.cfg.chatTemp,
+        maxTokens: S.cfg.chatMaxTok,
+      };
+
+      async function completeFallback() {
+        const r = await fetch(apiUrl('/api/chat/complete'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
+          body: JSON.stringify(payload),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.error || r.statusText || 'Chat failed');
+        const t = String(j.text || '').trim();
+        if (t) { full = t; body.innerHTML = fmtMsg(full); G('chatThread').scrollTop = G('chatThread').scrollHeight; }
       }
-      buf.split('\n').forEach(l => { if (l.trim()) applyLine(l); });
+
+      function applyLine(line) {
+        if (!line.startsWith('data: ')) return;
+        const p = line.slice(6).trim();
+        if (p === '[DONE]') return;
+        let obj;
+        try { obj = JSON.parse(p); } catch { return; }
+        if (obj.error) throw new Error(obj.error);
+        const delta = obj.delta;
+        if (typeof delta === 'string' && delta) {
+          if (!firstTok) { firstTok = Date.now(); lat('ch', firstTok - t0); }
+          full += delta;
+          body.innerHTML = fmtMsg(full);
+          G('chatThread').scrollTop = G('chatThread').scrollHeight;
+        }
+      }
+
+      try {
+        const res = await fetch(apiUrl('/api/chat/stream'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => '');
+          let errMsg = t;
+          try { errMsg = JSON.parse(t).error || errMsg; } catch { }
+          throw new Error(errMsg || res.statusText);
+        }
+        const reader = res.body?.getReader();
+        if (!reader) {
+          await completeFallback();
+        } else {
+          const dec = new TextDecoder();
+          let buf = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let nl;
+            while ((nl = buf.indexOf('\n')) !== -1) { applyLine(buf.slice(0, nl)); buf = buf.slice(nl + 1); }
+          }
+          buf.split('\n').forEach(l => { if (l.trim()) applyLine(l); });
+        }
+        if (!full.trim()) await completeFallback();
+      } catch (e) {
+        try { await completeFallback(); } catch (e2) {
+          body.textContent = `Error: ${e2.message}`;
+          toast(`Chat error: ${e2.message}`, true);
+        }
+      }
+
+      if (full.trim()) S.chat.push({ role: 'assistant', content: full, ts: new Date() });
+      else if (!body.textContent.startsWith('Error:')) body.textContent = 'No response. Check model name in Settings.';
+      syncChatSendBtn();
     }
-    if (!full.trim()) await completeFallback();
-  } catch (e) {
-    try { await completeFallback(); } catch (e2) {
-      body.textContent = `Error: ${e2.message}`;
-      toast(`Chat error: ${e2.message}`, true);
+
+    function addBubble(role, text) {
+      const d = document.createElement('div');
+      d.className = `cm ${role}`;
+      d.innerHTML = `<span class="cm-role">${role === 'user' ? 'You' : 'TwinMind'}</span><div class="cm-body">${fmtMsg(text)}</div>`;
+      G('chatThread').appendChild(d);
+      G('chatThread').scrollTop = G('chatThread').scrollHeight;
+      return d;
     }
-  }
 
-  if (full.trim()) S.chat.push({ role: 'assistant', content: full, ts: new Date() });
-  else if (!body.textContent.startsWith('Error:')) body.textContent = 'No response. Check model name in Settings.';
-  syncChatSendBtn();
-}
+    async function generateAndSaveSummary() {
+      if (!S.tx.length) return;
+      const fullTx = S.tx.map(c => c.text).join(' ');
+      const durationMin = S.tx.length > 1 ? Math.round((S.tx.at(-1).ts - S.tx[0].ts) / 60000) : 0;
 
-function addBubble(role, text) {
-  const d = document.createElement('div');
-  d.className = `cm ${role}`;
-  d.innerHTML = `<span class="cm-role">${role === 'user' ? 'You' : 'TwinMind'}</span><div class="cm-body">${fmtMsg(text)}</div>`;
-  G('chatThread').appendChild(d);
-  G('chatThread').scrollTop = G('chatThread').scrollHeight;
-  return d;
-}
-
-async function generateAndSaveSummary() {
-  if (!S.tx.length) return;
-  const fullTx = S.tx.map(c => c.text).join(' ');
-  const durationMin = S.tx.length > 1 ? Math.round((S.tx.at(-1).ts - S.tx[0].ts) / 60000) : 0;
-
-  const prompt = `You are an expert meeting summarizer. Analyze this transcript and return structured JSON.
+      const prompt = `You are an expert meeting summarizer. Analyze this transcript and return structured JSON.
 
 TRANSCRIPT:
 ${fullTx}
@@ -999,46 +1996,46 @@ Rules:
 - Return empty arrays when there is nothing to report
 - No markdown, no explanation — only the JSON object`;
 
-  try {
-    const res = await fetch(apiUrl('/api/chat/complete'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
-      body: JSON.stringify({
-        message: prompt, transcriptContext: '', chatHistory: [], isExpansion: false,
-        systemPrompt: 'You are a meeting summarizer. Return only valid JSON.',
-        model: S.cfg.model, temperature: 0.2, maxTokens: 2000,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Summary generation failed');
-    let raw = (data.text || '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('Model returned invalid JSON format');
-    const summary = JSON.parse(match[0]);
-    summary._id        = Date.now().toString();
-    summary._savedAt   = new Date().toISOString();
-    summary._duration  = durationMin;
-    summary._wordCount = fullTx.split(/\s+/).length;
-    summary._startTime = S.tx[0]?.ts?.toISOString() || null;
-    summary._endTime   = S.tx.at(-1)?.ts?.toISOString() || null;
-    S_currentSummary = summary;
-    const list = loadSummaries();
-    list.unshift(summary);
-    saveSummaries(list);
-    toast('Summary ready — click View Summary.');
-  } catch (err) {
-    S_currentSummary = null;
-    toast(`Summary failed: ${err.message}`, true);
-  }
-}
+      try {
+        const res = await fetch(apiUrl('/api/chat/complete'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-groq-api-key': S.cfg.apiKey },
+          body: JSON.stringify({
+            message: prompt, transcriptContext: '', chatHistory: [], isExpansion: false,
+            systemPrompt: 'You are a meeting summarizer. Return only valid JSON.',
+            model: S.cfg.model, temperature: 0.2, maxTokens: 2000,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Summary generation failed');
+        let raw = (data.text || '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('Model returned invalid JSON format');
+        const summary = JSON.parse(match[0]);
+        summary._id = Date.now().toString();
+        summary._savedAt = new Date().toISOString();
+        summary._duration = durationMin;
+        summary._wordCount = fullTx.split(/\s+/).length;
+        summary._startTime = S.tx[0]?.ts?.toISOString() || null;
+        summary._endTime = S.tx.at(-1)?.ts?.toISOString() || null;
+        S_currentSummary = summary;
+        const list = loadSummaries();
+        list.unshift(summary);
+        saveSummaries(list);
+        toast('Summary ready — click View Summary.');
+      } catch (err) {
+        S_currentSummary = null;
+        toast(`Summary failed: ${err.message}`, true);
+      }
+    }
 
-function openSummaryList() {
-  const list = loadSummaries();
-  const body = G('sumListBody');
-  if (!list.length) {
-    body.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-f);font-size:13px">No summaries saved yet. Record a meeting to generate one.</div>';
-  } else {
-    body.innerHTML = list.map((s, i) => `
+    function openSummaryList() {
+      const list = loadSummaries();
+      const body = G('sumListBody');
+      if (!list.length) {
+        body.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text-f);font-size:13px">No summaries saved yet. Record a meeting to generate one.</div>';
+      } else {
+        body.innerHTML = list.map((s, i) => `
       <div class="sum-list-item">
         <div style="flex:1;min-width:0;cursor:pointer" data-open="${i}" tabindex="0" role="button">
           <div class="sum-list-title">${esc(s.title || 'Untitled Meeting')}</div>
@@ -1049,206 +2046,207 @@ function openSummaryList() {
       </div>
     `).join('');
 
-    body.querySelectorAll('[data-open]').forEach(el => {
-      const open = () => {
-        const summaries = loadSummaries();
-        const idx = parseInt(el.dataset.open, 10);
-        if (summaries[idx]) openSummaryDetail(summaries[idx]);
-      };
-      el.addEventListener('click', open);
-      el.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
-    });
+        body.querySelectorAll('[data-open]').forEach(el => {
+          const open = () => {
+            const summaries = loadSummaries();
+            const idx = parseInt(el.dataset.open, 10);
+            if (summaries[idx]) openSummaryDetail(summaries[idx]);
+          };
+          el.addEventListener('click', open);
+          el.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
+        });
 
-    body.querySelectorAll('.sum-del-btn').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const summaries = loadSummaries();
-        const idx = parseInt(btn.dataset.delete, 10);
-        const title = summaries[idx]?.title || 'this summary';
-        if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-        summaries.splice(idx, 1);
-        saveSummaries(summaries);
-        if (!summaries.length) G('btnViewSum').style.display = 'none';
-        openSummaryList();
-      });
-    });
-  }
-  G('sumListModal').classList.remove('hidden');
-}
+        body.querySelectorAll('.sum-del-btn').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const summaries = loadSummaries();
+            const idx = parseInt(btn.dataset.delete, 10);
+            const title = summaries[idx]?.title || 'this summary';
+            if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
+            summaries.splice(idx, 1);
+            saveSummaries(summaries);
+            if (!summaries.length) G('btnViewSum').style.display = 'none';
+            openSummaryList();
+          });
+        });
+      }
+      G('sumListModal').classList.remove('hidden');
+    }
 
-function openSummaryDetail(summary) {
-  S_currentSummary = summary;
-  G('sumModalTitle').textContent = summary.title || 'Meeting Summary';
-  G('sumListModal').classList.add('hidden');
-  renderSummaryModal(summary);
-  G('sumModal').classList.remove('hidden');
-}
+    function openSummaryDetail(summary) {
+      S_currentSummary = summary;
+      G('sumModalTitle').textContent = summary.title || 'Meeting Summary';
+      G('sumListModal').classList.add('hidden');
+      renderSummaryModal(summary);
+      G('sumModal').classList.remove('hidden');
+    }
 
-function renderSummaryModal(s) {
-  const startStr = s._startTime ? new Date(s._startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const endStr   = s._endTime   ? new Date(s._endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  let html = '';
+    function renderSummaryModal(s) {
+      const startStr = s._startTime ? new Date(s._startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const endStr = s._endTime ? new Date(s._endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      let html = '';
 
-  html += `<div class="sum-title-row">
+      html += `<div class="sum-title-row">
     <input class="sum-title-inp" id="sumTitleInp" value="${esc(s.title || '')}" placeholder="Meeting title…" aria-label="Meeting title"/>
     <button class="btn btn-blue" id="btnSumSaveTitle" style="flex-shrink:0">Save Title</button>
   </div>`;
 
-  html += `<div class="sum-meta">
+      html += `<div class="sum-meta">
     ${startStr && endStr ? `<span>${startStr} – ${endStr}</span>` : ''}
     ${s._duration != null ? `<span>${s._duration} min</span>` : ''}
     ${s._wordCount ? `<span>${s._wordCount} words</span>` : ''}
     ${s._savedAt ? `<span>Saved ${new Date(s._savedAt).toLocaleDateString()}</span>` : ''}
   </div>`;
 
-  html += `<div class="sum-section"><div class="sum-section-title">Overview</div><p class="sum-para">${esc(s.overview || '')}</p></div>`;
+      html += `<div class="sum-section"><div class="sum-section-title">Overview</div><p class="sum-para">${esc(s.overview || '')}</p></div>`;
 
-  if (s.actionItems?.length) {
-    html += `<div class="sum-section"><div class="sum-section-title">Action Items (${s.actionItems.length})</div>`;
-    s.actionItems.forEach(item => {
-      html += `<div class="sum-item"><div class="sum-item-dot green"></div><div class="sum-item-text"><span class="sum-item-owner">${esc(item.owner || 'Team')}</span>${esc(item.action)}${item.deadline ? `<span style="color:var(--amber);font-size:11px;margin-left:8px">${esc(item.deadline)}</span>` : ''}</div></div>`;
-    });
-    html += `</div>`;
-  }
+      if (s.actionItems?.length) {
+        html += `<div class="sum-section"><div class="sum-section-title">Action Items (${s.actionItems.length})</div>`;
+        s.actionItems.forEach(item => {
+          html += `<div class="sum-item"><div class="sum-item-dot green"></div><div class="sum-item-text"><span class="sum-item-owner">${esc(item.owner || 'Team')}</span>${esc(item.action)}${item.deadline ? `<span style="color:var(--amber);font-size:11px;margin-left:8px">${esc(item.deadline)}</span>` : ''}</div></div>`;
+        });
+        html += `</div>`;
+      }
 
-  if (s.keyDecisions?.length) {
-    html += `<div class="sum-section"><div class="sum-section-title">Key Decisions</div>`;
-    s.keyDecisions.forEach(d => { html += `<div class="sum-item"><div class="sum-item-dot"></div><div class="sum-item-text">${esc(d)}</div></div>`; });
-    html += `</div>`;
-  }
+      if (s.keyDecisions?.length) {
+        html += `<div class="sum-section"><div class="sum-section-title">Key Decisions</div>`;
+        s.keyDecisions.forEach(d => { html += `<div class="sum-item"><div class="sum-item-dot"></div><div class="sum-item-text">${esc(d)}</div></div>`; });
+        html += `</div>`;
+      }
 
-  if (s.openQuestions?.length) {
-    html += `<div class="sum-section"><div class="sum-section-title">Open Questions</div>`;
-    s.openQuestions.forEach(q => { html += `<div class="sum-item"><div class="sum-item-dot amber"></div><div class="sum-item-text">${esc(q)}</div></div>`; });
-    html += `</div>`;
-  }
+      if (s.openQuestions?.length) {
+        html += `<div class="sum-section"><div class="sum-section-title">Open Questions</div>`;
+        s.openQuestions.forEach(q => { html += `<div class="sum-item"><div class="sum-item-dot amber"></div><div class="sum-item-text">${esc(q)}</div></div>`; });
+        html += `</div>`;
+      }
 
-  if (s.topics?.length) {
-    html += `<div class="sum-section"><div class="sum-section-title">Topics Discussed</div>`;
-    s.topics.forEach(t => {
-      html += `<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:600;color:var(--text-h);margin-bottom:3px">${esc(t.title)}</div><div style="font-size:12.5px;color:var(--text-b);line-height:1.6">${esc(t.summary)}</div></div>`;
-    });
-    html += `</div>`;
-  }
+      if (s.topics?.length) {
+        html += `<div class="sum-section"><div class="sum-section-title">Topics Discussed</div>`;
+        s.topics.forEach(t => {
+          html += `<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:600;color:var(--text-h);margin-bottom:3px">${esc(t.title)}</div><div style="font-size:12.5px;color:var(--text-b);line-height:1.6">${esc(t.summary)}</div></div>`;
+        });
+        html += `</div>`;
+      }
 
-  G('sumBody').innerHTML = html;
+      G('sumBody').innerHTML = html;
 
-  G('btnSumSaveTitle').addEventListener('click', () => {
-    const newTitle = G('sumTitleInp').value.trim();
-    if (!newTitle) { toast('Title cannot be empty.', true); return; }
-    if (!S_currentSummary?._id) return;
-    const list = loadSummaries();
-    const idx = list.findIndex(x => x._id === S_currentSummary._id);
-    if (idx !== -1) {
-      list[idx].title = newTitle;
-      saveSummaries(list);
-      S_currentSummary.title = newTitle;
-      G('sumModalTitle').textContent = newTitle;
-      toast('Title saved.');
+      G('btnSumSaveTitle').addEventListener('click', () => {
+        const newTitle = G('sumTitleInp').value.trim();
+        if (!newTitle) { toast('Title cannot be empty.', true); return; }
+        if (!S_currentSummary?._id) return;
+        const list = loadSummaries();
+        const idx = list.findIndex(x => x._id === S_currentSummary._id);
+        if (idx !== -1) {
+          list[idx].title = newTitle;
+          saveSummaries(list);
+          S_currentSummary.title = newTitle;
+          G('sumModalTitle').textContent = newTitle;
+          toast('Title saved.');
+        }
+      });
     }
-  });
-}
 
-function copySummary() {
-  if (!S_currentSummary) return;
-  const s = S_currentSummary;
-  let text = `MEETING SUMMARY\n${'='.repeat(40)}\nTitle: ${s.title || 'Untitled'}\n\nOVERVIEW\n${s.overview || ''}\n\n`;
-  if (s.actionItems?.length) {
-    text += `ACTION ITEMS\n`;
-    s.actionItems.forEach(i => { text += `  [${i.owner}] ${i.action}${i.deadline ? ` — by ${i.deadline}` : ''}\n`; });
-    text += '\n';
-  }
-  if (s.keyDecisions?.length) { text += `KEY DECISIONS\n`; s.keyDecisions.forEach(d => { text += `  ${d}\n`; }); text += '\n'; }
-  if (s.openQuestions?.length) { text += `OPEN QUESTIONS\n`; s.openQuestions.forEach(q => { text += `  ${q}\n`; }); }
-  navigator.clipboard.writeText(text).then(() => toast('Summary copied.')).catch(() => toast('Copy failed.', true));
-}
+    function copySummary() {
+      if (!S_currentSummary) return;
+      const s = S_currentSummary;
+      let text = `MEETING SUMMARY\n${'='.repeat(40)}\nTitle: ${s.title || 'Untitled'}\n\nOVERVIEW\n${s.overview || ''}\n\n`;
+      if (s.actionItems?.length) {
+        text += `ACTION ITEMS\n`;
+        s.actionItems.forEach(i => { text += `  [${i.owner}] ${i.action}${i.deadline ? ` — by ${i.deadline}` : ''}\n`; });
+        text += '\n';
+      }
+      if (s.keyDecisions?.length) { text += `KEY DECISIONS\n`; s.keyDecisions.forEach(d => { text += `  ${d}\n`; }); text += '\n'; }
+      if (s.openQuestions?.length) { text += `OPEN QUESTIONS\n`; s.openQuestions.forEach(q => { text += `  ${q}\n`; }); }
+      navigator.clipboard.writeText(text).then(() => toast('Summary copied.')).catch(() => toast('Copy failed.', true));
+    }
 
-function doExport() {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    settingsSnapshot: {
-      model: S.cfg.model, whisperModel: S.cfg.whisperModel,
-      ctxSug: S.cfg.ctxSug, ctxChat: S.cfg.ctxChat,
-      refreshSec: S.cfg.refreshSec, sugTemp: S.cfg.sugTemp, chatTemp: S.cfg.chatTemp,
-    },
-    transcript:        S.tx.map(c => ({ ts: c.ts.toISOString(), text: c.text })),
-    suggestionBatches: S.batches.map(b => ({ ts: b.ts.toISOString(), suggestions: b.suggestions })),
-    chatHistory:       S.chat.map(m => ({ ts: m.ts.toISOString(), role: m.role, content: m.content })),
-    summary:           S_currentSummary || null,
-  };
-  try {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `twinmind-session-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast('Session exported.');
-  } catch (e) { toast(`Export failed: ${e.message}`, true); }
-}
+    function doExport() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        settingsSnapshot: {
+          model: S.cfg.model, whisperModel: S.cfg.whisperModel,
+          ctxSug: S.cfg.ctxSug, ctxChat: S.cfg.ctxChat,
+          refreshSec: S.cfg.refreshSec, sugTemp: S.cfg.sugTemp, chatTemp: S.cfg.chatTemp,
+        },
+        transcript: S.tx.map(c => ({ ts: c.ts.toISOString(), text: c.text })),
+        suggestionBatches: S.batches.map(b => ({ ts: b.ts.toISOString(), suggestions: b.suggestions })),
+        chatHistory: S.chat.map(m => ({ ts: m.ts.toISOString(), role: m.role, content: m.content })),
+        summary: S_currentSummary || null,
+      };
+      try {
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `twinmind-session-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast('Session exported.');
+      } catch (e) { toast(`Export failed: ${e.message}`, true); }
+    }
 
-function fmt(d) {
-  return d instanceof Date ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
-}
+    function fmt(d) {
+      return d instanceof Date ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+    }
 
-function esc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
-function fmtMsg(text) {
-  let out = esc(text ?? '');
-  out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  out = out.replace(/^\s*[-*]\s+/gm, '&#8226; ');
-  out = out.replace(/\n/g, '<br>');
-  return out;
-}
+    function fmtMsg(text) {
+      let out = esc(text ?? '');
+      out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      out = out.replace(/^\s*[-*]\s+/gm, '&#8226; ');
+      out = out.replace(/\n/g, '<br>');
+      return out;
+    }
 
-function syncChatSendBtn() { G('btnSend').disabled = !S.cfg.apiKey; }
+    function syncChatSendBtn() { G('btnSend').disabled = !S.cfg.apiKey; }
 
-G('btnViewSum').addEventListener('click', () => {
-  const list = loadSummaries();
-  if (!list.length) { toast('No summaries yet. Record a meeting first.', true); return; }
-  openSummaryList();
-});
-G('btnSumListClose').addEventListener('click',  () => G('sumListModal').classList.add('hidden'));
-G('btnSumListClose2').addEventListener('click', () => G('sumListModal').classList.add('hidden'));
-G('sumListModal').addEventListener('click', e => { if (e.target === G('sumListModal')) G('sumListModal').classList.add('hidden'); });
-G('btnSumClose').addEventListener('click',  () => G('sumModal').classList.add('hidden'));
-G('btnSumClose2').addEventListener('click', () => G('sumModal').classList.add('hidden'));
-G('btnSumCopy').addEventListener('click', copySummary);
-G('btnSumBack').addEventListener('click', () => { G('sumModal').classList.add('hidden'); openSummaryList(); });
-G('sumModal').addEventListener('click', e => { if (e.target === G('sumModal')) G('sumModal').classList.add('hidden'); });
-G('btnMic').addEventListener('click', () => S.rec ? stopRec() : startRec());
-G('btnRef').addEventListener('click', async () => { await fetchSug(); S.sl = S.cfg.refreshSec; });
-G('chatInp').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (S.cfg.apiKey) doChat(G('chatInp').value); }
-});
-G('chatInp').addEventListener('input', () => {
-  G('chatInp').style.height = 'auto';
-  G('chatInp').style.height = Math.min(G('chatInp').scrollHeight, 110) + 'px';
-  syncChatSendBtn();
-});
-G('btnSend').addEventListener('click', () => doChat(G('chatInp').value));
-G('btnExp').addEventListener('click',  doExport);
-G('btnSet').addEventListener('click',  openModal);
-G('btnClose').addEventListener('click', closeModal);
-G('btnSav').addEventListener('click',  saveModal);
-G('btnRst').addEventListener('click',  resetModal);
-G('modal').addEventListener('click', e => { if (e.target === G('modal')) closeModal(); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    closeModal();
-    G('sumModal').classList.add('hidden');
-    G('sumListModal').classList.add('hidden');
-  }
-});
+    G('btnViewSum').addEventListener('click', () => {
+      const list = loadSummaries();
+      if (!list.length) { toast('No summaries yet. Record a meeting first.', true); return; }
+      openSummaryList();
+    });
+    G('btnSumListClose').addEventListener('click', () => G('sumListModal').classList.add('hidden'));
+    G('btnSumListClose2').addEventListener('click', () => G('sumListModal').classList.add('hidden'));
+    G('sumListModal').addEventListener('click', e => { if (e.target === G('sumListModal')) G('sumListModal').classList.add('hidden'); });
+    G('btnSumClose').addEventListener('click', () => G('sumModal').classList.add('hidden'));
+    G('btnSumClose2').addEventListener('click', () => G('sumModal').classList.add('hidden'));
+    G('btnSumCopy').addEventListener('click', copySummary);
+    G('btnSumBack').addEventListener('click', () => { G('sumModal').classList.add('hidden'); openSummaryList(); });
+    G('sumModal').addEventListener('click', e => { if (e.target === G('sumModal')) G('sumModal').classList.add('hidden'); });
+    G('btnMic').addEventListener('click', () => S.rec ? stopRec() : startRec());
+    G('btnRef').addEventListener('click', async () => { await fetchSug(); S.sl = S.cfg.refreshSec; });
+    G('chatInp').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (S.cfg.apiKey) doChat(G('chatInp').value); }
+    });
+    G('chatInp').addEventListener('input', () => {
+      G('chatInp').style.height = 'auto';
+      G('chatInp').style.height = Math.min(G('chatInp').scrollHeight, 110) + 'px';
+      syncChatSendBtn();
+    });
+    G('btnSend').addEventListener('click', () => doChat(G('chatInp').value));
+    G('btnExp').addEventListener('click', doExport);
+    G('btnSet').addEventListener('click', openModal);
+    G('btnClose').addEventListener('click', closeModal);
+    G('btnSav').addEventListener('click', saveModal);
+    G('btnRst').addEventListener('click', resetModal);
+    G('modal').addEventListener('click', e => { if (e.target === G('modal')) closeModal(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeModal();
+        G('sumModal').classList.add('hidden');
+        G('sumListModal').classList.add('hidden');
+      }
+    });
 
-syncChatSendBtn();
-if (!S.cfg.apiKey) openModal();
-if (loadSummaries().length) G('btnViewSum').style.display = 'inline-flex';
-</script>
+    syncChatSendBtn();
+    if (!S.cfg.apiKey) openModal();
+    if (loadSummaries().length) G('btnViewSum').style.display = 'inline-flex';
+  </script>
 </body>
+
 </html>
