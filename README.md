@@ -27,7 +27,7 @@ When you stop recording, the app automatically generates a structured meeting su
 
 No installation required. Everything runs in the browser.
 
-Step 1: Open the app
+**Step 1**: Open the app
 
 Go to https://twinmind-live-umber.vercel.app in Chrome. Chrome is recommended because it has the best support for the audio recording format the app uses.
 
